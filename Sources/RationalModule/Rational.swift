@@ -5,56 +5,118 @@ import RealModule
 /// All values of this type are reduced to their simplest form,
 /// i.e. the numerator and denominator are coprime.
 public struct Rational<IntegerType : UnsignedInteger & FixedWidthInteger> {
-    /// The sign of a rational number.
-    public enum Sign {
-        case plus, minus
-        
-        /// Returns the sign opposite to `operand`.
-        @inlinable
-        public static prefix func - (operand: Sign) -> Sign {
-            switch operand {
-            case .plus:
-                return .minus
-            case .minus:
-                return .plus
-            }
-        }
-        
-        /// Replaces this value with the opposite sign.
-        @inlinable
-        public mutating func negate() {
-            self = -self
-        }
-    }
+    /// The internal representation of the sign.
+    @usableFromInline
+    internal var isNegative: Bool
     
-    /// The sign of this value.
-    public let sign: Sign
-    
-    /// The reduced numerator of this value.
+    /// The magnitude of the reduced numerator.
     public let numerator: IntegerType
     
-    /// The reduced denominator of this value.
+    /// The magnitude of the reduced denominator.
     public let denominator: IntegerType
     
-    /// Creates a rational value.
-    ///
-    /// - Parameters:
-    ///   - sign: The sign of the value.
-    ///   - numerator: The reduced numerator of the value.
-    ///   - denominator: The reduced denominator of the value.
+    /// Creates a rational value with the given properties.
     @inlinable
-    internal init(sign: Sign = .plus, numerator: IntegerType, denominator: IntegerType) {
-        self.sign = sign
+    internal init(isNegative: Bool,
+                  numerator: IntegerType,
+                  denominator: IntegerType) {
+        assert(denominator != 0 && gcd(numerator, denominator) == 1)
+        self.isNegative = isNegative
         self.numerator = numerator
         self.denominator = denominator
     }
     
     /// Creates a rational value, reducing the given fraction.
+    ///
+    /// - Parameters:
+    ///   - sign: The sign. Ignored if this value is zero.
+    ///   - numerator: The magnitude of the fraction's numerator.
+    ///   - denominator: The magnitude of the fraction's denominator.
+    ///
+    /// - Precondition: `denominator != 0`
     @inlinable
-    public init(_ numerator: IntegerType, _ denominator: IntegerType) {
-        // Initialize with the reduced fraction.
-        let g = gcd(numerator, denominator)
-        self.init(numerator: numerator / g,
-                  denominator: denominator / g)
+    public init(sign: Sign = .plus,
+                numerator: IntegerType,
+                denominator: IntegerType) {
+        precondition(denominator != 0)
+        var (numerator, denominator) = (numerator, denominator)
+        reduce(&numerator, &denominator)
+        self.init(isNegative: sign == .minus,
+                  numerator: numerator,
+                  denominator: denominator)
+    }
+}
+
+public extension Rational {
+    /// Creates a rational value.
+    ///
+    /// - Parameters:
+    ///   - sign: The sign. Ignored if this value is zero.
+    ///   - quotient: The magnitude of the quotient.
+    ///   - remainder: The magnitude of the remainder.
+    ///   - denominator: The magnitude of the denominator.
+    ///
+    /// - Precondition: `denominator != 0`
+    @inlinable
+    init(sign: Sign = .plus,
+         quotient: IntegerType,
+         remainder: IntegerType,
+         denominator: IntegerType) {
+        precondition(denominator != 0)
+        // First reduce the fractional part.
+        var (remainder, denominator) = (remainder, denominator)
+        reduce(&remainder, &denominator)
+        //     r   q * d + r
+        // q + - = ---------
+        //     d       d
+        self.init(isNegative: sign == .minus,
+                  numerator: quotient * denominator + remainder,
+                  denominator: denominator)
+    }
+    
+    /// True iff this value is zero.
+    @inlinable
+    var isZero: Bool {
+        numerator == 0
+    }
+    
+    /// The sign, or `nil` if this value is zero.
+    @inlinable
+    var sign: Sign? {
+        guard !isZero else { return nil }
+        return isNegative ? .minus : .plus
+    }
+    
+    /// A tuple of the numerator and denominator.
+    @inlinable
+    var fraction: (numerator: IntegerType,
+                   denominator: IntegerType) {
+        (numerator, denominator)
+    }
+    
+    /// The magnitude of the quotient and remainder of
+    /// dividing the numerator by the denominator.
+    ///
+    /// The quotient `q` and remainder `r` satisfy the
+    /// relation `(n == q * d + r) && (r < d)`,
+    /// where `n` and `d` are the numerator and
+    /// denominator of this value.
+    @inlinable
+    var quotientAndRemainder: (quotient: IntegerType,
+                               remainder: IntegerType) {
+        numerator.quotientAndRemainder(dividingBy: denominator)
+    }
+    
+    /// The sign of this value and the magnitude
+    /// of the integral and fractional parts.
+    ///
+    /// The sign is `nil` If this value is zero.
+    @inlinable
+    var parts: (sign: Sign?,
+                integral: IntegerType,
+                fractional: (numerator: IntegerType,
+                             denominator: IntegerType)) {
+        let (q, r) = quotientAndRemainder
+        return (sign, q, (r, denominator))
     }
 }

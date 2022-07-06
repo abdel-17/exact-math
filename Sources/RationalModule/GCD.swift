@@ -1,7 +1,7 @@
 /// Returns the greatest common divisor of the given integers.
 @inlinable
 internal func gcd<T : UnsignedInteger>(_ x: T, _ y: T) -> T {
-    // Sending a zero denominator to this function
+    // Passing a zero denominator to this function
     // is a sign that something went wrong, so we
     // don't account for this case.
     assert(y != 0)
@@ -46,4 +46,14 @@ internal func gcd<T : UnsignedInteger>(_ x: T, _ y: T) -> T {
     // y is left shifted by min(xtz, ytz) to account for
     // all the cases where x and y were both even.
     return y << min(xtz, ytz)
+}
+
+/// Simplifies the given fraction to its simplest form.
+@inlinable
+internal func reduce<T : UnsignedInteger>(_ numerator: inout T,
+                                          _ denominator: inout T) {
+    let g = gcd(numerator, denominator)
+    guard g != 1 else { return }
+    numerator /= g
+    denominator /= g
 }
