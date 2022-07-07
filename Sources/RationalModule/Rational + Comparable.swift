@@ -26,8 +26,8 @@ extension Rational: Comparable {
             // lhs must be negative.
             return lhs.hasNegativeSign
         }
-        // (-, -): rhs.magnitude < lhs.magnitude
-        // (+, +): lhs.magnitude < rhs.magnitude
+        // (-, -): |rhs| < |lhs|
+        // (+, +): |lhs| < |rhs|
         return lhs.hasNegativeSign ?
         rhs.isLessInMagnitude(than: lhs) :
         lhs.isLessInMagnitude(than: rhs)

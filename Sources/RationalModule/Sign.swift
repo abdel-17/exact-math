@@ -1,5 +1,5 @@
 /// The sign of a non-zero number.
-public enum Sign: CaseIterable {
+public enum Sign {
     /// The sign of positive numbers.
     case plus
     
