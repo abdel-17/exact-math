@@ -1,9 +1,12 @@
 /// Returns the greatest common divisor of the given integers.
 @inlinable
 internal func gcd<T : UnsignedInteger>(_ x: T, _ y: T) -> T {
-    // Passing a zero denominator to this function
-    // is a sign that something went wrong, so we
-    // don't account for this case.
+    // Passing zero to the denominator position
+    // indicates something went wrong, so we
+    // don't account for this case. If you want
+    // to use this algorithm for another use
+    // case, simply replace the assert with
+    // `guard y != 0 else { return x }`.
     assert(y != 0)
     // Implements the binary gcd algorithm.
     //
@@ -48,12 +51,17 @@ internal func gcd<T : UnsignedInteger>(_ x: T, _ y: T) -> T {
     return y << min(xtz, ytz)
 }
 
-/// Simplifies the given fraction to its simplest form.
+/// Returns the given fraction in its simplest form.
+///
+/// A fraction is reduced iff its numerator and
+/// denominator are coprime.
 @inlinable
-internal func reduce<T : UnsignedInteger>(_ numerator: inout T,
-                                          _ denominator: inout T) {
+internal func reduced<T : UnsignedInteger>(_ numerator: T,
+                                           _ denominator: T) -> (numerator: T,
+                                                                 denominator: T) {
     let g = gcd(numerator, denominator)
-    guard g != 1 else { return }
-    numerator /= g
-    denominator /= g
+    // 61% of randomly chosen integers are coprime,
+    // so we handle this case efficiently.
+    guard g != 1 else { return (numerator, denominator) }
+    return (numerator / g, denominator / g)
 }

@@ -6,8 +6,13 @@ import RealModule
 /// i.e. the numerator and denominator are coprime.
 public struct Rational<IntegerType : UnsignedInteger & FixedWidthInteger> {
     /// The internal representation of the sign.
+    ///
+    /// Note: for the value zero, this property can be
+    /// either `true` or `false`. Both are valid
+    /// representations as the public `.sign`
+    /// property returns `nil` for zero.
     @usableFromInline
-    internal var isNegative: Bool
+    internal var hasNegativeSign: Bool
     
     /// The magnitude of the reduced numerator.
     public let numerator: IntegerType
@@ -17,11 +22,12 @@ public struct Rational<IntegerType : UnsignedInteger & FixedWidthInteger> {
     
     /// Creates a rational value with the given properties.
     @inlinable
-    internal init(isNegative: Bool,
+    internal init(hasNegativeSign: Bool,
                   numerator: IntegerType,
                   denominator: IntegerType) {
-        assert(denominator != 0 && gcd(numerator, denominator) == 1)
-        self.isNegative = isNegative
+        assert(denominator != 0 &&
+               gcd(numerator, denominator) == 1)
+        self.hasNegativeSign = hasNegativeSign
         self.numerator = numerator
         self.denominator = denominator
     }
@@ -29,7 +35,7 @@ public struct Rational<IntegerType : UnsignedInteger & FixedWidthInteger> {
     /// Creates a rational value, reducing the given fraction.
     ///
     /// - Parameters:
-    ///   - sign: The sign. Ignored if this value is zero.
+    ///   - sign: The sign. Ignored if the value is zero.
     ///   - numerator: The magnitude of the fraction's numerator.
     ///   - denominator: The magnitude of the fraction's denominator.
     ///
@@ -39,9 +45,8 @@ public struct Rational<IntegerType : UnsignedInteger & FixedWidthInteger> {
                 numerator: IntegerType,
                 denominator: IntegerType) {
         precondition(denominator != 0)
-        var (numerator, denominator) = (numerator, denominator)
-        reduce(&numerator, &denominator)
-        self.init(isNegative: sign == .minus,
+        let (numerator, denominator) = reduced(numerator, denominator)
+        self.init(hasNegativeSign: sign == .minus,
                   numerator: numerator,
                   denominator: denominator)
     }
@@ -51,7 +56,7 @@ public extension Rational {
     /// Creates a rational value.
     ///
     /// - Parameters:
-    ///   - sign: The sign. Ignored if this value is zero.
+    ///   - sign: The sign. Ignored if the value is zero.
     ///   - quotient: The magnitude of the quotient.
     ///   - remainder: The magnitude of the remainder.
     ///   - denominator: The magnitude of the denominator.
@@ -64,12 +69,11 @@ public extension Rational {
          denominator: IntegerType) {
         precondition(denominator != 0)
         // First reduce the fractional part.
-        var (remainder, denominator) = (remainder, denominator)
-        reduce(&remainder, &denominator)
+        let (remainder, denominator) = reduced(remainder, denominator)
         //     r   q * d + r
         // q + - = ---------
         //     d       d
-        self.init(isNegative: sign == .minus,
+        self.init(hasNegativeSign: sign == .minus,
                   numerator: quotient * denominator + remainder,
                   denominator: denominator)
     }
@@ -84,7 +88,7 @@ public extension Rational {
     @inlinable
     var sign: Sign? {
         guard !isZero else { return nil }
-        return isNegative ? .minus : .plus
+        return hasNegativeSign ? .minus : .plus
     }
     
     /// A tuple of the numerator and denominator.
