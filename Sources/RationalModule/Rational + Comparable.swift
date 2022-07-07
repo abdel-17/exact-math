@@ -1,15 +1,24 @@
+extension FixedWidthInteger {
+    /// Returns this value multiplied by `other`,
+    /// or `nil` on overflow.
+    @usableFromInline
+    internal func multipliedOrNil(by other: Self) -> Self? {
+        let (result, overflow) = self.multipliedReportingOverflow(by: other)
+        return overflow ? nil : result
+    }
+}
+
 extension Rational: Comparable {
     @inlinable
     public static func < (lhs: Rational, rhs: Rational) -> Bool {
-        // Handle the zero case separately to correctly
-        // compare against -0.
-        guard !lhs.isZero else {
-            // 0 < rhs
-            return rhs.sign == .plus
-        }
+        // Handle zero separately to correctly compare against -0.
         guard !rhs.isZero else {
             // lhs < 0
             return lhs.sign == .minus
+        }
+        guard !lhs.isZero else {
+            // 0 < rhs
+            return rhs.sign == .plus
         }
         // Neither lhs nor rhs is zero.
         // Check if both have the same sign.
@@ -17,11 +26,19 @@ extension Rational: Comparable {
             // lhs must be negative.
             return lhs.hasNegativeSign
         }
-        let (n1, d1) = lhs.fraction
-        let (n2, d2) = rhs.fraction
-        // case (-, -): lhs.magnitude > rhs.magnitude
-        // case (+, +): lhs.magnitude < rhs.magnitude
-        //
+        // (-, -): rhs.magnitude < lhs.magnitude
+        // (+, +): lhs.magnitude < rhs.magnitude
+        return lhs.hasNegativeSign ?
+        rhs.isLessInMagnitude(than: lhs) :
+        lhs.isLessInMagnitude(than: rhs)
+    }
+    
+    /// Returns true iff this value compares less
+    /// than `other` in magnitude.
+    @inlinable
+    internal func isLessInMagnitude(than other: Rational) -> Bool {
+        let (n1, d1) = self.fraction
+        let (n2, d2) = other.fraction
         // n1   n2
         // -- < --
         // d1   d2
@@ -31,14 +48,12 @@ extension Rational: Comparable {
         // d1 * d2   d1 * d2
         //
         // The denominators are equal, so we compare the numerators.
-        guard let x = n1.multipliedOrNil(by: d2),
-              let y = n2.multipliedOrNil(by: d1)
+        guard let lhsNumerator = n1.multipliedOrNil(by: d2),
+              let rhsNumerator = n2.multipliedOrNil(by: d1)
         else {
-            // Only resort to the slow path on overflow.
-            let x = n1.multipliedFullWidth(by: d2)
-            let y = n2.multipliedFullWidth(by: d1)
-            return lhs.hasNegativeSign ? x > y : x < y
+            // Resort to the slow path only when needed.
+            return n1.multipliedFullWidth(by: d2) < d1.multipliedFullWidth(by: n2)
         }
-        return lhs.hasNegativeSign ? x > y : x < y
+        return lhsNumerator < rhsNumerator
     }
 }

@@ -31,7 +31,9 @@ public struct Rational<IntegerType : UnsignedInteger & FixedWidthInteger> {
         self.numerator = numerator
         self.denominator = denominator
     }
-    
+}
+
+public extension Rational {
     /// Creates a rational value, reducing the given fraction.
     ///
     /// - Parameters:
@@ -41,18 +43,16 @@ public struct Rational<IntegerType : UnsignedInteger & FixedWidthInteger> {
     ///
     /// - Precondition: `denominator != 0`
     @inlinable
-    public init(sign: Sign = .plus,
-                numerator: IntegerType,
-                denominator: IntegerType) {
+    init(sign: Sign = .plus,
+         numerator: IntegerType,
+         denominator: IntegerType) {
         precondition(denominator != 0)
         let (numerator, denominator) = reduced(numerator, denominator)
         self.init(hasNegativeSign: sign == .minus,
                   numerator: numerator,
                   denominator: denominator)
     }
-}
-
-public extension Rational {
+    
     /// Creates a rational value.
     ///
     /// - Parameters:
