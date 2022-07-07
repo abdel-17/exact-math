@@ -34,6 +34,26 @@ public struct Rational<IntegerType : UnsignedInteger & FixedWidthInteger> {
 }
 
 public extension Rational {
+    /// The sign of a non-zero number.
+    enum Sign {
+        /// The sign of positive numbers.
+        case plus
+        
+        /// The sign of negative numbers.
+        case minus
+        
+        /// The sign opposite to this value.
+        @inlinable
+        public var opposite: Sign {
+            switch self {
+            case .plus:
+                return .minus
+            case .minus:
+                return .plus
+            }
+        }
+    }
+    
     /// Creates a rational value, reducing the given fraction.
     ///
     /// - Parameters:
