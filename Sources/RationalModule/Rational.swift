@@ -12,7 +12,7 @@ public struct Rational<IntegerType : UnsignedInteger & FixedWidthInteger> {
     /// representations as the public `.sign`
     /// property returns `nil` for zero.
     @usableFromInline
-    internal var hasNegativeSign: Bool
+    internal var isNegative: Bool
     
     /// The magnitude of the reduced numerator.
     public let numerator: IntegerType
@@ -22,12 +22,12 @@ public struct Rational<IntegerType : UnsignedInteger & FixedWidthInteger> {
     
     /// Creates a rational value with the given properties.
     @inlinable
-    internal init(hasNegativeSign: Bool,
+    internal init(isNegative: Bool,
                   numerator: IntegerType,
                   denominator: IntegerType) {
         assert(denominator != 0 &&
                gcd(numerator, denominator) == 1)
-        self.hasNegativeSign = hasNegativeSign
+        self.isNegative = isNegative
         self.numerator = numerator
         self.denominator = denominator
     }
@@ -67,8 +67,9 @@ public extension Rational {
          numerator: IntegerType,
          denominator: IntegerType) {
         precondition(denominator != 0)
-        let (numerator, denominator) = reduced(numerator, denominator)
-        self.init(hasNegativeSign: sign == .minus,
+        var (numerator, denominator) = (numerator, denominator)
+        Rational.reduce(&numerator, &denominator)
+        self.init(isNegative: sign == .minus,
                   numerator: numerator,
                   denominator: denominator)
     }
@@ -89,11 +90,12 @@ public extension Rational {
          denominator: IntegerType) {
         precondition(denominator != 0)
         // First reduce the fractional part.
-        let (remainder, denominator) = reduced(remainder, denominator)
+        var (remainder, denominator) = (remainder, denominator)
+        Rational.reduce(&remainder, &denominator)
         //     r   q * d + r
         // q + - = ---------
         //     d       d
-        self.init(hasNegativeSign: sign == .minus,
+        self.init(isNegative: sign == .minus,
                   numerator: quotient * denominator + remainder,
                   denominator: denominator)
     }
@@ -108,10 +110,10 @@ public extension Rational {
     @inlinable
     var sign: Sign? {
         guard !isZero else { return nil }
-        return hasNegativeSign ? .minus : .plus
+        return isNegative ? .minus : .plus
     }
     
-    /// A tuple of the numerator and denominator.
+    /// The magnitude of the numerator and denominator.
     @inlinable
     var fraction: (numerator: IntegerType,
                    denominator: IntegerType) {

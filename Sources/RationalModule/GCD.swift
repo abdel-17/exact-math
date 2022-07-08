@@ -51,17 +51,19 @@ internal func gcd<T : UnsignedInteger>(_ x: T, _ y: T) -> T {
     return y << min(xtz, ytz)
 }
 
-/// Returns the given fraction in its simplest form.
-///
-/// A fraction is reduced iff its numerator and
-/// denominator are coprime.
-@inlinable
-internal func reduced<T : UnsignedInteger>(_ numerator: T,
-                                           _ denominator: T) -> (numerator: T,
-                                                                 denominator: T) {
-    let g = gcd(numerator, denominator)
-    // 61% of randomly chosen integers are coprime,
-    // so we handle this case efficiently.
-    guard g != 1 else { return (numerator, denominator) }
-    return (numerator / g, denominator / g)
+internal extension Rational {
+    /// Reduces the given fraction to its simplest form.
+    ///
+    /// A fraction is reduced iff its numerator and
+    /// denominator are coprime.
+    @inlinable
+    static func reduce(_ numerator: inout IntegerType,
+                       _ denominator: inout IntegerType) {
+        let g = gcd(numerator, denominator)
+        // 61% of randomly chosen integers are coprime,
+        // so we handle this case efficiently.
+        guard g != 1 else { return }
+        numerator /= g
+        denominator /= g
+    }
 }

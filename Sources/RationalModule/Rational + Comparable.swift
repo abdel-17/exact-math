@@ -1,19 +1,10 @@
-extension FixedWidthInteger {
-    /// Returns this value multiplied by `other`,
-    /// or `nil` on overflow.
-    @usableFromInline
-    internal func multipliedOrNil(by other: Self) -> Self? {
-        let (result, overflow) = self.multipliedReportingOverflow(by: other)
-        return overflow ? nil : result
-    }
-}
-
 extension Rational: Comparable {
     @inlinable
     public static func < (lhs: Rational, rhs: Rational) -> Bool {
         // Handle zero separately to correctly compare against -0.
         guard !rhs.isZero else {
             // lhs < 0
+            // We use `.sign` to account for the -0 case.
             return lhs.sign == .minus
         }
         guard !lhs.isZero else {
@@ -24,11 +15,11 @@ extension Rational: Comparable {
         // Check if both have the same sign.
         guard lhs.sign == rhs.sign else {
             // lhs must be negative.
-            return lhs.hasNegativeSign
+            return lhs.isNegative
         }
         // (-, -): |rhs| < |lhs|
         // (+, +): |lhs| < |rhs|
-        return lhs.hasNegativeSign ?
+        return lhs.isNegative ?
         rhs.isLessInMagnitude(than: lhs) :
         lhs.isLessInMagnitude(than: rhs)
     }
@@ -48,12 +39,13 @@ extension Rational: Comparable {
         // d1 * d2   d1 * d2
         //
         // The denominators are equal, so we compare the numerators.
-        guard let lhsNumerator = n1.multipliedOrNil(by: d2),
-              let rhsNumerator = n2.multipliedOrNil(by: d1)
-        else {
+        do {
+            let lhsNumerator = try n1.multipliedOrThrows(by: d2)
+            let rhsNumerator = try n2.multipliedOrThrows(by: d1)
+            return lhsNumerator < rhsNumerator
+        } catch {
             // Resort to the slow path only when needed.
             return n1.multipliedFullWidth(by: d2) < d1.multipliedFullWidth(by: n2)
         }
-        return lhsNumerator < rhsNumerator
     }
 }

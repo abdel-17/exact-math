@@ -4,7 +4,7 @@ extension Rational: Equatable {
         // Zero values are equal regardless of
         // their internal sign representation.
         guard !lhs.isZero else { return rhs.isZero }
-        return lhs.hasNegativeSign == rhs.hasNegativeSign &&
+        return lhs.isNegative == rhs.isNegative &&
         lhs.numerator == rhs.numerator &&
         lhs.denominator == rhs.denominator
     }
