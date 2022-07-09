@@ -7,7 +7,7 @@ public enum ArithmeticError: Error {
     case zeroDivision
 }
 
-internal extension FixedWidthInteger where Self: UnsignedInteger {
+internal extension FixedWidthInteger {
     /// Returns `other` added to this value.
     ///
     /// - Throws: `ArithmeticError.overflow` on overflow.
@@ -31,7 +31,8 @@ internal extension FixedWidthInteger where Self: UnsignedInteger {
     func addingOrThrows(isNegative: Bool,
                         other: Self,
                         otherIsNegative: Bool) throws -> (isNegative: Bool,
-                                                          magnitude: Self) {
+                                                          magnitude: Self)
+    where Self: UnsignedInteger {
         if isNegative == otherIsNegative {
             // (+, +) or (-, -)
             // Simply add the magnitudes with the same sign.

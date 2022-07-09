@@ -17,7 +17,7 @@ extension Rational: Comparable {
             // lhs must be negative.
             return lhs.isNegative
         }
-        // (-, -): |rhs| < |lhs|
+        // (-, -): |lhs| > |rhs|
         // (+, +): |lhs| < |rhs|
         return lhs.isNegative ?
         rhs.isLessInMagnitude(than: lhs) :
@@ -26,7 +26,7 @@ extension Rational: Comparable {
     
     /// Returns true iff this value compares less
     /// than `other` in magnitude.
-    @inlinable
+    @usableFromInline
     internal func isLessInMagnitude(than other: Rational) -> Bool {
         let (n1, d1) = self.fraction
         let (n2, d2) = other.fraction

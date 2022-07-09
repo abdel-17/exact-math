@@ -18,15 +18,28 @@ public struct Rational<IntegerType : UnsignedInteger & FixedWidthInteger> {
     public let numerator: IntegerType
     
     /// The magnitude of the reduced denominator.
+    ///
+    /// This value is always non-zero. Attempting to
+    /// create a rational value with zero denominator
+    /// causes a runtime error.
     public let denominator: IntegerType
     
-    /// Creates a rational value with the given properties.
-    @inlinable
+    /// Creates a rational value with the given properties,
+    /// and a flag to check if the value needs to be reduced.
+    ///
+    /// The given fraction is assumed to be reduced.
+    @usableFromInline
     internal init(isNegative: Bool,
-                  numerator: IntegerType,
-                  denominator: IntegerType) {
-        assert(denominator != 0 &&
-               gcd(numerator, denominator) == 1)
+                  _ numerator: IntegerType,
+                  _ denominator: IntegerType,
+                  reduce: Bool = false) {
+        assert(denominator != 0)
+        var (numerator, denominator) = (numerator, denominator)
+        if reduce {
+            reduceFraction(&numerator, &denominator)
+        } else {
+            assert(gcd(numerator, denominator) == 1)
+        }
         self.isNegative = isNegative
         self.numerator = numerator
         self.denominator = denominator
@@ -56,31 +69,38 @@ public extension Rational {
     
     /// Creates a rational value, reducing the given fraction.
     ///
+    /// Use this intializer to create a rational value from a
+    /// fraction of integers with the given sign.
+    ///
     /// - Parameters:
-    ///   - sign: The sign. Ignored if the value is zero.
-    ///   - numerator: The magnitude of the fraction's numerator.
-    ///   - denominator: The magnitude of the fraction's denominator.
+    ///   - sign: The sign. Default value is `.plus`.
+    ///   Ignored if `numerator` is zero.
+    ///   - numerator: The numerator of the fraction.
+    ///   - denominator: The denominator of the fraction..
     ///
     /// - Precondition: `denominator != 0`
     @inlinable
     init(sign: Sign = .plus,
-         numerator: IntegerType,
-         denominator: IntegerType) {
+         _ numerator: IntegerType,
+         _ denominator: IntegerType) {
         precondition(denominator != 0)
-        var (numerator, denominator) = (numerator, denominator)
-        Rational.reduce(&numerator, &denominator)
         self.init(isNegative: sign == .minus,
-                  numerator: numerator,
-                  denominator: denominator)
+                  numerator,
+                  denominator,
+                  reduce: true)
     }
     
-    /// Creates a rational value.
+    /// Creates a rational value from a mixed number.
+    ///
+    /// Use this initializer to create a rational value from a
+    /// mixed number with the given sign.
     ///
     /// - Parameters:
-    ///   - sign: The sign. Ignored if the value is zero.
-    ///   - quotient: The magnitude of the quotient.
-    ///   - remainder: The magnitude of the remainder.
-    ///   - denominator: The magnitude of the denominator.
+    ///   - sign: The sign. Default value is `.plus`.
+    ///   Ignored if both `quotient` and `remaidner` are zero.
+    ///   - quotient: The integral part.
+    ///   - remainder: The numerator of the fractional part.
+    ///   - denominator: The denominator of the fractional part.
     ///
     /// - Precondition: `denominator != 0`
     @inlinable
@@ -91,16 +111,15 @@ public extension Rational {
         precondition(denominator != 0)
         // First reduce the fractional part.
         var (remainder, denominator) = (remainder, denominator)
-        Rational.reduce(&remainder, &denominator)
-        //     r   q * d + r
-        // q + - = ---------
-        //     d       d
+        reduceFraction(&remainder, &denominator)
         self.init(isNegative: sign == .minus,
-                  numerator: quotient * denominator + remainder,
-                  denominator: denominator)
+                  quotient * denominator + remainder,
+                  denominator)
     }
     
     /// True iff this value is zero.
+    ///
+    /// A rational value is zero iff its numerator is zero.
     @inlinable
     var isZero: Bool {
         numerator == 0
@@ -131,18 +150,5 @@ public extension Rational {
     var quotientAndRemainder: (quotient: IntegerType,
                                remainder: IntegerType) {
         numerator.quotientAndRemainder(dividingBy: denominator)
-    }
-    
-    /// The sign of this value and the magnitude
-    /// of the integral and fractional parts.
-    ///
-    /// The sign is `nil` If this value is zero.
-    @inlinable
-    var parts: (sign: Sign?,
-                integral: IntegerType,
-                fractional: (numerator: IntegerType,
-                             denominator: IntegerType)) {
-        let (q, r) = quotientAndRemainder
-        return (sign, q, (r, denominator))
     }
 }
