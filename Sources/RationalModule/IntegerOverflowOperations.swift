@@ -11,7 +11,6 @@ internal extension FixedWidthInteger {
     /// Returns `other` added to this value.
     ///
     /// - Throws: `ArithmeticError.overflow` on overflow.
-    @inlinable
     func addingOrThrows(_ other: Self) throws -> Self {
         let (result, overflow) = self.multipliedReportingOverflow(by: other)
         guard !overflow else { throw ArithmeticError.overflow }
@@ -27,7 +26,6 @@ internal extension FixedWidthInteger {
     ///   - otherIsNegative: True iff `other` is negative.
     ///
     /// - Throws: `ArithmeticError.overflow` on overflow.
-    @inlinable
     func addingOrThrows(isNegative: Bool,
                         other: Self,
                         otherIsNegative: Bool) throws -> (isNegative: Bool,
@@ -53,7 +51,6 @@ internal extension FixedWidthInteger {
     /// Returns this value multiplied by `other`.
     ///
     /// - Throws: `ArithmeticError.overflow` on overflow.
-    @inlinable
     func multipliedOrThrows(by other: Self) throws -> Self {
         let (result, overflow) = self.multipliedReportingOverflow(by: other)
         guard !overflow else { throw ArithmeticError.overflow }

@@ -1,5 +1,4 @@
 extension Rational: Comparable {
-    @inlinable
     public static func < (lhs: Rational, rhs: Rational) -> Bool {
         // Handle zero separately to correctly compare against -0.
         guard !rhs.isZero else {
@@ -26,7 +25,6 @@ extension Rational: Comparable {
     
     /// Returns true iff this value compares less
     /// than `other` in magnitude.
-    @usableFromInline
     internal func isLessInMagnitude(than other: Rational) -> Bool {
         let (n1, d1) = self.fraction
         let (n2, d2) = other.fraction

@@ -10,7 +10,6 @@ public extension Rational {
     /// The maximum representible rational value.
     ///
     /// Equivalent to `Rational(IntegerType.max)`.
-    @inlinable
     static var max: Rational {
         Rational(IntegerType.max)
     }
@@ -19,7 +18,6 @@ public extension Rational {
     /// and denominator 1.
     ///
     /// Equivalent to `Rational(IntegerType.zero)`.
-    @inlinable
     static var zero: Rational {
         Rational(IntegerType.zero)
     }
@@ -43,7 +41,6 @@ public extension Rational {
     ///   - sign: The sign. Ignored if the value is zero.
     ///   Default value is `.plus`.
     ///   - numerator: The magnitude of the integer.
-    @inlinable
     init(sign: Sign = .plus,
          _ magnitude: IntegerType) {
         self.init(isNegative: sign == .minus,
@@ -58,7 +55,6 @@ public extension Rational {
     ///
     /// Use `init?(exactly:)` to return `nil`
     /// instead of a runtime error.
-    @inlinable
     init<T : BinaryInteger>(_ source: T) {
         self.init(isNegative: T.isSigned && source < 0,
                   IntegerType(source.magnitude), 1)
@@ -69,7 +65,6 @@ public extension Rational {
     ///
     /// Use this initializer when you're unsure if the magnitude of
     /// `source` can be represented exactly in `IntegerType`.
-    @inlinable
     init?<T : BinaryInteger>(exactly source: T) {
         guard let magnitude = IntegerType(exactly: source.magnitude) else { return nil }
         self.init(isNegative: T.isSigned && source < 0,
@@ -85,7 +80,6 @@ public extension Rational {
     /// - Parameters:
     ///   - numerator: The numerator of the fraction.
     ///   - denominator: The denominator of the fraciton.
-    @inlinable
     init<T : BinaryInteger>(_ numerator: T,
                             _ denominator: T) {
         // This incorrectly considers the value negative

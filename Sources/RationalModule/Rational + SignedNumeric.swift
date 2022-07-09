@@ -29,7 +29,6 @@ public extension Rational {
     /// for overflow; otherwise, use `*`.
     ///
     /// - Throws: `ArithmeticError.overflow` on overflow.
-    @inlinable
     func multipliedOrThrows(by other: Rational) throws -> Rational {
         var (n1, d1) = self.fraction
         var (n2, d2) = other.fraction
@@ -46,7 +45,6 @@ public extension Rational {
     /// for overflow; otherwise, use `*=`.
     ///
     /// - Throws: `ArithmeticError.overflow` on overflow.
-    @inlinable
     mutating func multiplyOrThrows(by other: Rational) throws {
         self = try self.multipliedOrThrows(by: other)
     }

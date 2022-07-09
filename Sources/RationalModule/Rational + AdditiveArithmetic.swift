@@ -1,20 +1,16 @@
 extension Rational: AdditiveArithmetic {
-    @inlinable
     public static func + (lhs: Rational, rhs: Rational) -> Rational {
         try! lhs.addingOrThrows(rhs)
     }
     
-    @inlinable
     public static func += (lhs: inout Rational, rhs: Rational) {
         try! lhs.addOrThrows(rhs)
     }
     
-    @inlinable
     public static func - (lhs: Rational, rhs: Rational) -> Rational {
         try! lhs.subtractingOrThrows(rhs)
     }
     
-    @inlinable
     public static func -= (lhs: inout Rational, rhs: Rational) {
         try! lhs.subtractOrThrows(rhs)
     }
@@ -32,7 +28,6 @@ public extension Rational {
     ///   numerator and denominator of `other` by.
     ///
     /// - Throws: `ArithmeticError.overflow` on overflow.
-    @usableFromInline
     internal func formingCommonDenominator(with other: Rational,
                                            lhsMultiplier: IntegerType,
                                            rhsMultiplier: IntegerType) throws -> Rational {
@@ -56,7 +51,6 @@ public extension Rational {
     /// for overflow; otherwise, use `+`.
     ///
     /// - Throws: `ArithmeticError.overflow` on overflow.
-    @inlinable
     func addingOrThrows(_ other: Rational) throws -> Rational {
         let d1 = self.denominator
         let d2 = other.denominator
@@ -102,7 +96,6 @@ public extension Rational {
     /// for overflow; otherwise, use `+=`.
     ///
     /// - Throws: `ArithmeticError.overflow` on overflow.
-    @inlinable
     mutating func addOrThrows(_ other: Rational) throws {
         self = try self.addingOrThrows(other)
     }
@@ -113,7 +106,6 @@ public extension Rational {
     /// for overflow; otherwise, use `-`.
     ///
     /// - Throws: `ArithmeticError.overflow` on overflow.
-    @inlinable
     func subtractingOrThrows(_ other: Rational) throws -> Rational {
         try self.addingOrThrows(-other)
     }
@@ -124,7 +116,6 @@ public extension Rational {
     /// for overflow; otherwise, use `-=`.
     ///
     /// - Throws: `ArithmeticError.overflow` on overflow.
-    @inlinable
     mutating func subtractOrThrows(_ other: Rational) throws {
         self = try self.subtractingOrThrows(other)
     }

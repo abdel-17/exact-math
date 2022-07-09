@@ -1,5 +1,4 @@
 /// Returns the greatest common divisor of the given integers.
-@inlinable
 internal func gcd<T : UnsignedInteger>(_ x: T, _ y: T) -> T {
     // Passing zero to the denominator position
     // indicates something went wrong, so we
@@ -55,7 +54,6 @@ internal func gcd<T : UnsignedInteger>(_ x: T, _ y: T) -> T {
 ///
 /// A fraction is reduced iff its numerator and
 /// denominator are coprime.
-@inlinable
 internal func reduceFraction<T : UnsignedInteger>(_ numerator: inout T,
                                                   _ denominator: inout T) {
     let g = gcd(numerator, denominator)

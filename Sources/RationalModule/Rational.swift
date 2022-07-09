@@ -11,7 +11,6 @@ public struct Rational<IntegerType : UnsignedInteger & FixedWidthInteger> {
     /// either `true` or `false`. Both are valid
     /// representations as the public `.sign`
     /// property returns `nil` for zero.
-    @usableFromInline
     internal var isNegative: Bool
     
     /// The magnitude of the reduced numerator.
@@ -28,7 +27,6 @@ public struct Rational<IntegerType : UnsignedInteger & FixedWidthInteger> {
     /// and a flag to check if the value needs to be reduced.
     ///
     /// The given fraction is assumed to be reduced.
-    @usableFromInline
     internal init(isNegative: Bool,
                   _ numerator: IntegerType,
                   _ denominator: IntegerType,
@@ -79,7 +77,6 @@ public extension Rational {
     ///   - denominator: The denominator of the fraction..
     ///
     /// - Precondition: `denominator != 0`
-    @inlinable
     init(sign: Sign = .plus,
          _ numerator: IntegerType,
          _ denominator: IntegerType) {
@@ -103,7 +100,6 @@ public extension Rational {
     ///   - denominator: The denominator of the fractional part.
     ///
     /// - Precondition: `denominator != 0`
-    @inlinable
     init(sign: Sign = .plus,
          quotient: IntegerType,
          remainder: IntegerType,
@@ -120,20 +116,17 @@ public extension Rational {
     /// True iff this value is zero.
     ///
     /// A rational value is zero iff its numerator is zero.
-    @inlinable
     var isZero: Bool {
         numerator == 0
     }
     
     /// The sign, or `nil` if this value is zero.
-    @inlinable
     var sign: Sign? {
         guard !isZero else { return nil }
         return isNegative ? .minus : .plus
     }
     
     /// The magnitude of the numerator and denominator.
-    @inlinable
     var fraction: (numerator: IntegerType,
                    denominator: IntegerType) {
         (numerator, denominator)
@@ -146,7 +139,6 @@ public extension Rational {
     /// relation `(n == q * d + r) && (r < d)`,
     /// where `n` and `d` are the numerator and
     /// denominator of this value.
-    @inlinable
     var quotientAndRemainder: (quotient: IntegerType,
                                remainder: IntegerType) {
         numerator.quotientAndRemainder(dividingBy: denominator)
