@@ -1,8 +1,6 @@
 extension Rational: ExpressibleByIntegerLiteral {
-    public typealias IntegerLiteralType = IntegerType.IntegerLiteralType
-    
-    public init(integerLiteral value: IntegerLiteralType) {
-        self.init(IntegerType(integerLiteral: value))
+    public init(integerLiteral value: Int) {
+        self.init(value)
     }
 }
 
@@ -33,6 +31,15 @@ public extension Rational {
     
     /// Creates a rational value from a sign-magnitude
     /// representation of an integer.
+    internal init(isNegative: Bool,
+                  magnitude: IntegerType) {
+        self.init(isNegative: isNegative,
+                  numerator: magnitude,
+                  denominator: 1)
+    }
+    
+    /// Creates a rational value from a sign-magnitude
+    /// representation of an integer.
     ///
     /// Use this initializer when you want to specify the
     /// sign of a value created from an unsigned integer.
@@ -44,7 +51,7 @@ public extension Rational {
     init(sign: Sign = .plus,
          _ magnitude: IntegerType) {
         self.init(isNegative: sign == .minus,
-                  magnitude, 1)
+                  magnitude: magnitude)
     }
     
     /// Creates a rational value from an integer.
@@ -57,7 +64,7 @@ public extension Rational {
     /// instead of a runtime error.
     init<T : BinaryInteger>(_ source: T) {
         self.init(isNegative: T.isSigned && source < 0,
-                  IntegerType(source.magnitude), 1)
+                  magnitude: IntegerType(source.magnitude))
     }
     
     /// Creates a rational value from an integer,
@@ -68,7 +75,7 @@ public extension Rational {
     init?<T : BinaryInteger>(exactly source: T) {
         guard let magnitude = IntegerType(exactly: source.magnitude) else { return nil }
         self.init(isNegative: T.isSigned && source < 0,
-                  magnitude, 1)
+                  magnitude: magnitude)
     }
     
     /// Creates a rational value, reducing the given fraction.
@@ -86,8 +93,8 @@ public extension Rational {
         // if the numerator is zero, but that's okay as
         // 0 and -0 are considered the same value.
         self.init(isNegative: T.isSigned && numerator.signum() != denominator.signum(),
-                  IntegerType(numerator.magnitude),
-                  IntegerType(denominator.magnitude),
+                  numerator: IntegerType(numerator.magnitude),
+                  denominator: IntegerType(denominator.magnitude),
                   reduce: true)
     }
 }

@@ -41,8 +41,8 @@ public extension Rational {
                                                                       other: rhsNumerator,
                                                                       otherIsNegative: other.isNegative)
         return try Rational(isNegative: isNegative,
-                            numerator,
-                            self.denominator.multipliedOrThrows(by: lhsMultiplier))
+                            numerator: numerator,
+                            denominator: self.denominator.multipliedOrThrows(by: lhsMultiplier))
     }
     
     /// Returns the result of adding `other` to this value.
@@ -66,28 +66,28 @@ public extension Rational {
         //
         // The lhs is multiplied up and down by d2 / g1,
         // and the rhs by d1 / g1
-        var m1 = d2
-        var m2 = d1
+        var lhsMultiplier = d2
+        var rhsMultiplier = d1
         if g1 != 1 {
-            m1 /= g1
-            m2 /= g1
+            lhsMultiplier /= g1
+            rhsMultiplier /= g1
         }
         let result = try self.formingCommonDenominator(with: other,
-                                                       lhsMultiplier: m1,
-                                                       rhsMultiplier: m2)
+                                                       lhsMultiplier: lhsMultiplier,
+                                                       rhsMultiplier: rhsMultiplier)
         // For cases where the denominators are coprime,
         // the fraction does not need to be reduced.
         // This optimization is worth it because 61% of
         // randomly chosen integers are coprime.
         guard g1 != 1 else { return result }
         // gcd(numerator, denominator) = gcd(numerator, g1).
-        // This is faster to compute as g1 will be less than
+        // This is faster to compute as g1 is less than
         // denominator (d1 * d2) in most cases.
         let g2 = gcd(result.numerator, g1)
         guard g2 != 1 else { return result }
         return Rational(isNegative: result.isNegative,
-                        result.numerator / g2,
-                        result.denominator / g2)
+                        numerator: result.numerator / g2,
+                        denominator: result.denominator / g2)
     }
     
     /// Adds`other` to this value.

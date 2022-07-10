@@ -28,8 +28,8 @@ public struct Rational<IntegerType : UnsignedInteger & FixedWidthInteger> {
     ///
     /// The given fraction is assumed to be reduced.
     internal init(isNegative: Bool,
-                  _ numerator: IntegerType,
-                  _ denominator: IntegerType,
+                  numerator: IntegerType,
+                  denominator: IntegerType,
                   reduce: Bool = false) {
         assert(denominator != 0)
         var (numerator, denominator) = (numerator, denominator)
@@ -82,8 +82,8 @@ public extension Rational {
          _ denominator: IntegerType) {
         precondition(denominator != 0)
         self.init(isNegative: sign == .minus,
-                  numerator,
-                  denominator,
+                  numerator: numerator,
+                  denominator: denominator,
                   reduce: true)
     }
     
@@ -94,23 +94,27 @@ public extension Rational {
     ///
     /// - Parameters:
     ///   - sign: The sign. Default value is `.plus`.
-    ///   Ignored if both `quotient` and `remaidner` are zero.
+    ///   Ignored if both `quotient` and `remainder` are zero.
     ///   - quotient: The integral part.
     ///   - remainder: The numerator of the fractional part.
     ///   - denominator: The denominator of the fractional part.
     ///
-    /// - Precondition: `denominator != 0`
+    /// - Precondition: `remainder < denominator`
     init(sign: Sign = .plus,
          quotient: IntegerType,
          remainder: IntegerType,
          denominator: IntegerType) {
-        precondition(denominator != 0)
+        precondition(remainder < denominator)
+        //     r   q * d + r
+        // q + - = ---------
+        //     d       d
         // First reduce the fractional part.
         var (remainder, denominator) = (remainder, denominator)
         reduceFraction(&remainder, &denominator)
+        // The resulting fraction is reduced.
         self.init(isNegative: sign == .minus,
-                  quotient * denominator + remainder,
-                  denominator)
+                  numerator: quotient * denominator + remainder,
+                  denominator: denominator)
     }
     
     /// True iff this value is zero.

@@ -14,8 +14,8 @@ extension Rational: AlgebraicField {
     public var reciprocal: Rational? {
         guard !isZero else { return nil }
         return Rational(isNegative: isNegative,
-                        denominator,
-                        numerator)
+                        numerator: denominator,
+                        denominator: numerator)
     }
 }
 
@@ -33,6 +33,7 @@ public extension Rational {
         }
         return try self.multipliedOrThrows(by: reciprocal)
     }
+    
     /// Divides this value by `other`.
     ///
     /// Use this function when you want to check for
