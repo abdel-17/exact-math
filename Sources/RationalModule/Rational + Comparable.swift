@@ -1,33 +1,13 @@
 extension Rational: Comparable {
     public static func < (lhs: Rational, rhs: Rational) -> Bool {
-        // Handle zero separately to correctly compare against -0.
-        guard !rhs.isZero else {
-            // lhs < 0
-            // We use `.sign` to account for the -0 case.
-            return lhs.sign == .minus
-        }
-        guard !lhs.isZero else {
-            // 0 < rhs
-            return rhs.sign == .plus
-        }
-        // Neither lhs nor rhs is zero.
-        // Check if both have the same sign.
-        guard lhs.sign == rhs.sign else {
-            // lhs must be negative.
-            return lhs.isNegative
-        }
-        // (-, -): |lhs| > |rhs|
-        // (+, +): |lhs| < |rhs|
-        return lhs.isNegative ?
-        rhs.isLessInMagnitude(than: lhs) :
-        lhs.isLessInMagnitude(than: rhs)
-    }
-    
-    /// Returns true iff this value compares less
-    /// than `other` in magnitude.
-    internal func isLessInMagnitude(than other: Rational) -> Bool {
-        let (n1, d1) = self.fraction
-        let (n2, d2) = other.fraction
+        // Add fast paths for comparison against 0.
+        // lhs < 0
+        if rhs.isZero { return lhs.isNegative }
+        // rhs is non-zero.
+        // 0 < rhs <=> !(rhs <= 0) <=> !(rhs < 0)
+        if lhs.isZero { return !rhs.isNegative }
+        let (n1, d1) = lhs.numeratorAndDenominator
+        let (n2, d2) = rhs.numeratorAndDenominator
         // n1   n2
         // -- < --
         // d1   d2
@@ -37,13 +17,14 @@ extension Rational: Comparable {
         // d1 * d2   d1 * d2
         //
         // The denominators are equal, so we compare the numerators.
-        do {
-            let lhsNumerator = try n1.multipliedOrThrows(by: d2)
-            let rhsNumerator = try n2.multipliedOrThrows(by: d1)
-            return lhsNumerator < rhsNumerator
-        } catch {
+        // - Note: This only works under the assumption that the
+        // common denominator is non-negative.
+        guard let lhsNumerator = multiplyNilOnOverflow(n1, d2),
+              let rhsNumerator = multiplyNilOnOverflow(d1, n2)
+        else {
             // Resort to the slow path only when needed.
             return n1.multipliedFullWidth(by: d2) < d1.multipliedFullWidth(by: n2)
         }
+        return lhsNumerator < rhsNumerator
     }
 }

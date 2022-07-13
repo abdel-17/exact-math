@@ -1,59 +1,42 @@
-/// A type representing an invalid arithmetic operation.
-public enum ArithmeticError: Error {
-    /// The error thrown on overflow.
-    case overflow
-    
-    /// The error thrown on division by zero.
-    case zeroDivision
+import RealModule
+
+/// A type representing an arithmetic operation.
+public enum ArithmeticOperation {
+    case addition
+    case subtraction
+    case multiplication
+    case division
 }
 
-internal extension FixedWidthInteger {
-    /// Returns `other` added to this value.
-    ///
-    /// - Throws: `ArithmeticError.overflow` on overflow.
-    func addingOrThrows(_ other: Self) throws -> Self {
-        let (result, overflow) = self.multipliedReportingOverflow(by: other)
-        guard !overflow else { throw ArithmeticError.overflow }
-        return result
-    }
+/// A type representing an invalid arithmetic operation.
+public struct OverflowError<T : AlgebraicField>: Error {
+    /// The operands the operation is performed on.
+    let operands: (T, T)
     
-    /// Returns sign and magnitude of `other` added
-    /// to this value in sign-magnitude representation.
-    ///
-    /// - Parameters:
-    ///   - isNegative: True iff this value is negative.
-    ///   - other: The magnitude of the value to add.
-    ///   - otherIsNegative: True iff `other` is negative.
-    ///
-    /// - Throws: `ArithmeticError.overflow` on overflow.
-    func addingOrThrows(isNegative: Bool,
-                        other: Self,
-                        otherIsNegative: Bool) throws -> (isNegative: Bool,
-                                                          magnitude: Self)
-    where Self: UnsignedInteger {
-        if isNegative == otherIsNegative {
-            // (+, +) or (-, -)
-            // Simply add the magnitudes with the same sign.
-            return try (isNegative, self.addingOrThrows(other))
-        } else {
-            // (-, +) or (+, -)
-            // The result is negative if the greater side is negative,
-            // and its magnitude is either self - other or other - self,
-            // depending on which is greater.
-            if self > other {
-                return (isNegative, self - other)
-            } else {
-                return (otherIsNegative, other - self)
-            }
-        }
-    }
+    /// The failed operation.
+    let operation: ArithmeticOperation
+}
+
+/// Returns the result of adding`rhs` to `lhs`,
+/// returning `nil` on overflow.
+internal func addNilOnOverflow<T : FixedWidthInteger>(_ lhs: T, _ rhs: T) -> T? {
+    let (result, overflow) = lhs.addingReportingOverflow(rhs)
+    guard !overflow else { return nil }
+    return result
+}
     
-    /// Returns this value multiplied by `other`.
-    ///
-    /// - Throws: `ArithmeticError.overflow` on overflow.
-    func multipliedOrThrows(by other: Self) throws -> Self {
-        let (result, overflow) = self.multipliedReportingOverflow(by: other)
-        guard !overflow else { throw ArithmeticError.overflow }
-        return result
-    }
+/// Returns the result of subtracting`rhs` from `lhs`,
+/// returning `nil` on overflow.
+internal func subtractNilOnOverflow<T : FixedWidthInteger>(_ lhs: T, _ rhs: T) -> T? {
+    let (result, overflow) = lhs.subtractingReportingOverflow(rhs)
+    guard !overflow else { return nil }
+    return result
+}
+
+/// Returns the result of multiplying`lhs` by `rhs`,
+/// returning `nil` on overflow.
+internal func multiplyNilOnOverflow<T : FixedWidthInteger>(_ lhs: T, _ rhs: T) -> T? {
+    let (result, overflow) = lhs.multipliedReportingOverflow(by: rhs)
+    guard !overflow else { return nil }
+    return result
 }

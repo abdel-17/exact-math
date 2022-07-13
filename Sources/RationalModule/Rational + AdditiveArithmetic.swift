@@ -1,122 +1,104 @@
 extension Rational: AdditiveArithmetic {
     public static func + (lhs: Rational, rhs: Rational) -> Rational {
-        try! lhs.addingOrThrows(rhs)
-    }
-    
-    public static func += (lhs: inout Rational, rhs: Rational) {
-        try! lhs.addOrThrows(rhs)
+        try! lhs &+ rhs
     }
     
     public static func - (lhs: Rational, rhs: Rational) -> Rational {
-        try! lhs.subtractingOrThrows(rhs)
-    }
-    
-    public static func -= (lhs: inout Rational, rhs: Rational) {
-        try! lhs.subtractOrThrows(rhs)
+        try! lhs &- rhs
     }
 }
 
 public extension Rational {
-    /// Returns the result of adding `other` to this value
-    /// by forming a common denomnator.
-    ///
-    /// - Parameters:
-    ///   - other: The value to add.
-    ///   - lhsMultiplier: The value to multiply the
-    ///   numerator and denominator of this value by.
-    ///   - rhsMultiplier: The value to multiply the
-    ///   numerator and denominator of `other` by.
-    ///
-    /// - Throws: `ArithmeticError.overflow` on overflow.
+    /// Returns the result of forming a common denominator
+    /// with `other` and combining the numerators using
+    /// the given closure.
     internal func formingCommonDenominator(with other: Rational,
-                                           lhsMultiplier: IntegerType,
-                                           rhsMultiplier: IntegerType) throws -> Rational {
-        // n1   n2   n1 * m1   n2 * m2   n1 * m1 + n2 * m2
-        // -- + -- = ------- + ------- = -----------------
-        // d1   d2   d1 * m1   d2 * m2        d1 * m1
-        assert(self.denominator * lhsMultiplier == other.denominator * rhsMultiplier)
-        let lhsNumerator = try self.numerator.multipliedOrThrows(by: lhsMultiplier)
-        let rhsNumerator = try other.numerator.multipliedOrThrows(by: rhsMultiplier)
-        let (isNegative, numerator) = try lhsNumerator.addingOrThrows(isNegative: self.isNegative,
-                                                                      other: rhsNumerator,
-                                                                      otherIsNegative: other.isNegative)
-        return try Rational(isNegative: isNegative,
-                            numerator: numerator,
-                            denominator: self.denominator.multipliedOrThrows(by: lhsMultiplier))
-    }
-    
-    /// Returns the result of adding `other` to this value.
-    ///
-    /// Use this function when you want to check
-    /// for overflow; otherwise, use `+`.
-    ///
-    /// - Throws: `ArithmeticError.overflow` on overflow.
-    func addingOrThrows(_ other: Rational) throws -> Rational {
-        let d1 = self.denominator
-        let d2 = other.denominator
+                                           operation: (IntegerType, IntegerType) -> IntegerType?) -> Rational? {
+        let (n1, d1) = self.numeratorAndDenominator
+        let (n2, d2) = other.numeratorAndDenominator
         let g1 = gcd(d1, d2)
-        // We form a common denominator using the least
-        // common multiple function.
+        // We form a common denominator using
+        // the least common multiple function.
         //
         // lcm(d1, d2) = d1 * d2 / g1
         //
-        // n1   n2
-        // -- ± --
-        // d1   d2
-        //
-        // The lhs is multiplied up and down by d2 / g1,
-        // and the rhs by d1 / g1
+        // n1 * (d2 / g1)   n2 * (d1 / g1)
+        // -------------- ± -------------
+        // d1 * (d2 / g1)   d2 * (d1 / g1)
         var lhsMultiplier = d2
         var rhsMultiplier = d1
+        divide(&lhsMultiplier, &rhsMultiplier, by: g1)
+        guard let lhsNumerator = multiplyNilOnOverflow(n1, lhsMultiplier),
+              let rhsNumerator = multiplyNilOnOverflow(n2, rhsMultiplier),
+              var numerator = operation(lhsNumerator, rhsNumerator),
+              var denominator = multiplyNilOnOverflow(d1, lhsMultiplier)
+        else { return nil }
+        // If the denominators are coprime,
+        // the fraction is reduced.
         if g1 != 1 {
-            lhsMultiplier /= g1
-            rhsMultiplier /= g1
+            // gcd(numerator, denominator) = gcd(numerator, g1).
+            // This is faster to compute as g1 is less than
+            // denominator (d1 * d2) in most cases.
+            let g2 = gcd(numerator, g1)
+            divide(&numerator, &denominator, by: g2)
         }
-        let result = try self.formingCommonDenominator(with: other,
-                                                       lhsMultiplier: lhsMultiplier,
-                                                       rhsMultiplier: rhsMultiplier)
-        // For cases where the denominators are coprime,
-        // the fraction does not need to be reduced.
-        // This optimization is worth it because 61% of
-        // randomly chosen integers are coprime.
-        guard g1 != 1 else { return result }
-        // gcd(numerator, denominator) = gcd(numerator, g1).
-        // This is faster to compute as g1 is less than
-        // denominator (d1 * d2) in most cases.
-        let g2 = gcd(result.numerator, g1)
-        guard g2 != 1 else { return result }
-        return Rational(isNegative: result.isNegative,
-                        numerator: result.numerator / g2,
-                        denominator: result.denominator / g2)
+        return Rational(numerator: numerator,
+                        denominator: denominator)
     }
     
-    /// Adds`other` to this value.
+    /// Returns the result of adding `rhs` to `lhs`,
+    /// throwing an error on overflow.
     ///
-    /// Use this function when you want to check
-    /// for overflow; otherwise, use `+=`.
+    /// Use this operator when you want to check
+    /// for overflow; otherwise, use `+`.
     ///
-    /// - Throws: `ArithmeticError.overflow` on overflow.
-    mutating func addOrThrows(_ other: Rational) throws {
-        self = try self.addingOrThrows(other)
+    /// - Throws: `OverflowError` on overflow.
+    static func &+ (lhs: Rational, rhs: Rational) throws -> Rational {
+        guard let sum = lhs.formingCommonDenominator(with: rhs,
+                                                     operation: addNilOnOverflow)
+        else {
+            throw OverflowError(operands: (lhs, rhs),
+                                operation: .addition)
+        }
+        return sum
     }
     
-    /// Returns the result of subtracting `other` from this value.
+    /// Returns the result of subtracting `rhs` from `lhs`,
+    /// throwing an error on overflow.
     ///
-    /// Use this function when you want to check
+    /// Use this operator when you want to check
     /// for overflow; otherwise, use `-`.
     ///
     /// - Throws: `ArithmeticError.overflow` on overflow.
-    func subtractingOrThrows(_ other: Rational) throws -> Rational {
-        try self.addingOrThrows(-other)
+    static func &- (lhs: Rational, rhs: Rational) throws -> Rational {
+        guard let sum = lhs.formingCommonDenominator(with: rhs,
+                                                     operation: subtractNilOnOverflow)
+        else {
+            throw OverflowError(operands: (lhs, rhs),
+                                operation: .subtraction)
+        }
+        return sum
     }
     
-    /// Subtracts `other` from this value.
+    /// Adds `rhs` to `lhs`,
+    /// throwing an error on overflow.
     ///
-    /// Use this function when you want to check
+    /// Use this operator when you want to check
+    /// for overflow; otherwise, use `+=`.
+    ///
+    /// - Throws: `OverflowError` on overflow.
+    static func &+= (lhs: inout Rational, rhs: Rational) throws {
+        try lhs = lhs &+ rhs
+    }
+    
+    /// Subtracts `rhs` from `lhs`,
+    /// throwing an error on overflow.
+    ///
+    /// Use this operator when you want to check
     /// for overflow; otherwise, use `-=`.
     ///
-    /// - Throws: `ArithmeticError.overflow` on overflow.
-    mutating func subtractOrThrows(_ other: Rational) throws {
-        self = try self.subtractingOrThrows(other)
+    /// - Throws: `OverflowError` on overflow.
+    static func &-= (lhs: inout Rational, rhs: Rational) throws {
+        try lhs = lhs &- rhs
     }
 }

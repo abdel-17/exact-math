@@ -1,47 +1,49 @@
-extension Rational: SignedNumeric {
+extension Rational: Numeric {
     public static func * (lhs: Rational, rhs: Rational) -> Rational {
-        try! lhs.multipliedOrThrows(by: rhs)
+        try! lhs &* rhs
     }
     
     public static func *= (lhs: inout Rational, rhs: Rational) {
-        try! lhs.multiplyOrThrows(by: rhs)
-    }
-    
-    public var magnitude: Rational {
-        var magnitude = self
-        magnitude.isNegative = false
-        return magnitude
+        try! lhs &*= rhs
     }
     
     public mutating func negate() {
-        isNegative.toggle()
+        self = Rational(numerator: -numerator,
+                        denominator: denominator)
     }
 }
 
 public extension Rational {
-    /// Returns the result of multiplying this value by `other`.
+    /// Returns the result of multiplying `lhs` by `rhs`,
+    /// throwing an error on overflow.
     ///
-    /// Use this function when you want to check
+    /// Use this operator when you want to check
     /// for overflow; otherwise, use `*`.
     ///
-    /// - Throws: `ArithmeticError.overflow` on overflow.
-    func multipliedOrThrows(by other: Rational) throws -> Rational {
-        var (n1, d1) = self.fraction
-        var (n2, d2) = other.fraction
+    /// - Throws: `OverflowError` on overflow.
+    static func &* (lhs: Rational, rhs: Rational) throws -> Rational {
+        var (n1, d1) = lhs.numeratorAndDenominator
+        var (n2, d2) = rhs.numeratorAndDenominator
         reduceFraction(&n1, &d2)
         reduceFraction(&n2, &d1)
-        return try Rational(isNegative: self.isNegative != other.isNegative,
-                            numerator: n1.multipliedOrThrows(by: n2),
-                            denominator: d1.multipliedOrThrows(by: d2))
+        guard let numerator = multiplyNilOnOverflow(n1, n2),
+              let denominator = multiplyNilOnOverflow(d1, d2)
+        else {
+            throw OverflowError(operands: (lhs, rhs),
+                                operation: .multiplication)
+        }
+        return Rational(numerator: numerator,
+                        denominator: denominator)
     }
     
-    /// Multiplies this value by `other`.
+    /// Multiplies `lhs` by `rhs`,
+    /// throwing an error on overflow.
     ///
-    /// Use this function when you want to check
+    /// Use this operator when you want to check
     /// for overflow; otherwise, use `*=`.
     ///
-    /// - Throws: `ArithmeticError.overflow` on overflow.
-    mutating func multiplyOrThrows(by other: Rational) throws {
-        self = try self.multipliedOrThrows(by: other)
+    /// - Throws: `OverflowError` on overflow.
+    static func &*= (lhs: inout Rational, rhs: Rational) throws {
+        try lhs = lhs &* rhs
     }
 }

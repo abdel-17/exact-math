@@ -1,12 +1,9 @@
 /// Returns the greatest common divisor of the given integers.
-internal func gcd<T : UnsignedInteger>(_ x: T, _ y: T) -> T {
+internal func gcd<T : BinaryInteger>(_ a: T, _ b: T) -> T {
     // Passing zero to the denominator position
     // indicates something went wrong, so we
-    // don't account for this case. If you want
-    // to use this algorithm for another use
-    // case, simply replace the assert with
-    // `guard y != 0 else { return x }`.
-    assert(y != 0)
+    // don't account for this case.
+    assert(b != 0)
     // Implements the binary gcd algorithm.
     //
     // 1) x and y are both even:
@@ -32,9 +29,9 @@ internal func gcd<T : UnsignedInteger>(_ x: T, _ y: T) -> T {
     // Stopping condition:
     // -------------------
     // gcd(0, y) = y
-    guard x != 0 else { return y }
-    var x = x
-    var y = y
+    var x = a.magnitude
+    var y = b.magnitude
+    guard y != 0 else { return T(x) }
     let xtz = x.trailingZeroBitCount
     let ytz = y.trailingZeroBitCount
     y >>= ytz
@@ -47,19 +44,28 @@ internal func gcd<T : UnsignedInteger>(_ x: T, _ y: T) -> T {
     } while x != 0
     // y is left shifted by min(xtz, ytz) to account for
     // all the cases where x and y were both even.
-    return y << min(xtz, ytz)
+    return T(y << min(xtz, ytz))
 }
 
 /// Reduces the given fraction to its simplest form.
 ///
 /// A fraction is reduced iff its numerator and
 /// denominator are coprime.
-internal func reduceFraction<T : UnsignedInteger>(_ numerator: inout T,
-                                                  _ denominator: inout T) {
-    let g = gcd(numerator, denominator)
+internal func reduceFraction<T : BinaryInteger>(_ numerator: inout T,
+                                                _ denominator: inout T) {
     // 61% of randomly chosen integers are coprime,
     // so we handle this case efficiently.
-    guard g != 1 else { return }
-    numerator /= g
-    denominator /= g
+    divide(&numerator, &denominator, by: gcd(numerator, denominator))
+}
+
+/// Reduces the given fraction to its simplest form.
+///
+/// A fraction is reduced iff its numerator and
+/// denominator are coprime.
+internal func divide<T : BinaryInteger>(_ numerator: inout T,
+                                        _ denominator: inout T,
+                                        by divisor: T) {
+    guard divisor != 1 else { return }
+    numerator /= divisor
+    denominator /= divisor
 }

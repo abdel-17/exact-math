@@ -1,3 +1,3 @@
-# exact-math
+# Exact Math
 
 A description of this package.
