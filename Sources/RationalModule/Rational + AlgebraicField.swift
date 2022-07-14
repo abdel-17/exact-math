@@ -23,10 +23,20 @@ public extension Rational {
     /// - Throws: `ArithmeticError`
     /// on division by zero or overflow.
     static func &/ (lhs: Rational, rhs: Rational) throws -> Rational {
-        guard let reciprocal = rhs.reciprocal else {
-            throw ArithmeticError.divisionByZero
-        }
-        return try lhs &* reciprocal
+        guard !rhs.isZero else { throw ArithmeticError.divisionByZero }
+        // n1   n2   n1   d2
+        // -- / -- = -- * --
+        // d1   d2   d1   n2
+        //
+        // See &* for more details.
+        let (n1, d1) = lhs.numeratorAndDenominator
+        let (n2, d2) = lhs.numeratorAndDenominator
+        // If n2 is IntegerType.min, n1 must be even,
+        // or else the value n1/n2 overflows because
+        // the denominator is negative and shares no
+        // common factors with the numerator.
+        guard n2 != .min || n1.isMultiple(of: 2) else { throw ArithmeticError.overflow }
+        return try Rational(n1, n2).multipliedThrowingOnOverflow(by: Rational(d2, d1))
     }
     
     /// Divides `lhs` value by `rhs`,

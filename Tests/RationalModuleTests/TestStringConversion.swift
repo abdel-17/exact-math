@@ -26,9 +26,11 @@ class TestStringConversion: XCTestCase {
         XCTAssertEqual(Rational<Int>("A8/a8", radix: 16), 1)
     }
     
+    /*
     func testPerformanceExample() throws {
         self.measure {
             
         }
     }
+     */
 }

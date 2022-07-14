@@ -18,9 +18,11 @@ public struct Rational<IntegerType : SignedInteger & FixedWidthInteger>: Hashabl
     /// causes a runtime error.
     public let denominator: IntegerType
     
-    /// Creates a rational value with the given properties.
+    /// Creates a rational value from a reduced fraction.
     internal init(numerator: IntegerType, denominator: IntegerType) {
-        assert(denominator > 0 && gcd(numerator, denominator) == 1)
+        precondition(denominator > 0)
+        // This is an expensive check, so we use assert.
+        assert(gcd(numerator, denominator) == 1)
         self.numerator = numerator
         self.denominator = denominator
     }
@@ -29,6 +31,9 @@ public struct Rational<IntegerType : SignedInteger & FixedWidthInteger>: Hashabl
 // MARK: - Initializers
 public extension Rational {
     /// Creates a rational value from a fraction of integers.
+    ///
+    /// If the denominator is `IntegerType.min` and the
+    /// numerator is odd, the value cannot be represented.
     ///
     /// - Parameters:
     ///   - numerator: The numerator of the fraction.
@@ -47,7 +52,7 @@ public extension Rational {
             self = .zero
         default:
             var (numerator, denominator) = (numerator, denominator)
-            reduceFraction(&numerator, &denominator)
+            divide(&numerator, &denominator, by: gcd(numerator, denominator))
             if denominator < 0 {
                 numerator.negate()
                 denominator.negate()

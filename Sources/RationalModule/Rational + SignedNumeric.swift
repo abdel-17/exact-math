@@ -13,6 +13,15 @@ extension Rational: Numeric {
 }
 
 public extension Rational {
+    /// Returns this value multiplied by `other`,
+    /// throwing an error on overflow.
+    ///
+    /// - Throws: `ArithmeticError` on overflow.
+    internal func multipliedThrowingOnOverflow(by other: Rational) throws -> Rational {
+        try Rational(numerator: multiplyThrowingOnOverflow(numerator, other.numerator),
+                     denominator: multiplyThrowingOnOverflow(denominator, other.denominator))
+    }
+    
     /// Returns the result of multiplying `lhs` by `rhs`,
     /// throwing an error on overflow.
     ///
@@ -21,13 +30,18 @@ public extension Rational {
     ///
     /// - Throws: `ArithmeticError` on overflow.
     static func &* (lhs: Rational, rhs: Rational) throws -> Rational {
-        var (n1, d1) = lhs.numeratorAndDenominator
-        var (n2, d2) = rhs.numeratorAndDenominator
-        reduceFraction(&n1, &d2)
-        reduceFraction(&n2, &d1)
-        let numerator = try multiplyThrowingOnOverflow(n1, n2)
-        let denominator = try multiplyThrowingOnOverflow(d1, d2)
-        return Rational(numerator: numerator, denominator: denominator)
+        // let g1 = gcd(n1, d2)
+        // let g2 = gcd(n2, d1)
+        //
+        // n1 * n2   (n1 / g1) * (n2 / g2)
+        // ------- = ---------------------
+        // d1 * d2   (d2 / g1) * (d1 / g2)
+        //
+        // We reduce each pair instead of reducing
+        // the products to avoid overflow.
+        let (n1, d1) = lhs.numeratorAndDenominator
+        let (n2, d2) = lhs.numeratorAndDenominator
+        return try Rational(n1, d2).multipliedThrowingOnOverflow(by: Rational(n2, d1))
     }
     
     /// Multiplies `lhs` by `rhs`,

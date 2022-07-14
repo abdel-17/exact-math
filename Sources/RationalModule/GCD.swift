@@ -1,10 +1,6 @@
 /// Returns the greatest common divisor of the given integers.
 internal func gcd<T : BinaryInteger>(_ a: T, _ b: T) -> T {
-    // Passing zero to the denominator position
-    // indicates something went wrong, so we
-    // don't account for this case.
-    assert(b != 0)
-    // Implements the binary gcd algorithm.
+    // Binary gcd algorithm:
     //
     // 1) x and y are both even:
     // -------------------------
@@ -31,7 +27,10 @@ internal func gcd<T : BinaryInteger>(_ a: T, _ b: T) -> T {
     // gcd(0, y) = y
     var x = a.magnitude
     var y = b.magnitude
-    guard y != 0 else { return T(x) }
+    // Stopping condition.
+    if x == 0 { return T(y) }
+    // gcd(x, 0) = gcd(0, x) = x
+    if y == 0 { return T(x) }
     let xtz = x.trailingZeroBitCount
     let ytz = y.trailingZeroBitCount
     y >>= ytz
@@ -47,25 +46,9 @@ internal func gcd<T : BinaryInteger>(_ a: T, _ b: T) -> T {
     return T(y << min(xtz, ytz))
 }
 
-/// Reduces the given fraction to its simplest form.
-///
-/// A fraction is reduced iff its numerator and
-/// denominator are coprime.
-internal func reduceFraction<T : BinaryInteger>(_ numerator: inout T,
-                                                _ denominator: inout T) {
-    // 61% of randomly chosen integers are coprime,
-    // so we handle this case efficiently.
-    divide(&numerator, &denominator, by: gcd(numerator, denominator))
-}
-
-/// Reduces the given fraction to its simplest form.
-///
-/// A fraction is reduced iff its numerator and
-/// denominator are coprime.
-internal func divide<T : BinaryInteger>(_ numerator: inout T,
-                                        _ denominator: inout T,
-                                        by divisor: T) {
+/// Divides the given integers by `divisor`.
+internal func divide<T : BinaryInteger>(_ a: inout T, _ b: inout T, by divisor: T) {
     guard divisor != 1 else { return }
-    numerator /= divisor
-    denominator /= divisor
+    a /= divisor
+    b /= divisor
 }
