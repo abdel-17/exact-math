@@ -51,7 +51,7 @@ extension Rational: LosslessStringConvertible {
     ///
     /// - Requires: `radix` in the range `2...36`.
     public init?(_ description: String, radix: Int = 10) {
-        guard let result = description.parse() else { return nil }
+        guard let result = description.parseRational() else { return nil }
         guard var numerator = IntegerType(result.numerator, radix: radix) else { return nil }
         if result.sign == "-" { numerator.negate() }
         guard let denominatorString = result.denominator else {
@@ -65,21 +65,21 @@ extension Rational: LosslessStringConvertible {
     }
 }
 
-private let regex = try! NSRegularExpression(pattern: "(\\+|-)?" +  // Optional sign.
-                                             "([0-9a-z]+)" +        // One or more digits/letters.
-                                             "(?:" +                // Optionally:
-                                             "\\/" +                // - Fraction slash.
-                                             "([0-9a-z]+)" +        // One or more digits/letters.
-                                             ")?",
-                                             options: .caseInsensitive)
+private let rationalRegex = try! NSRegularExpression(pattern: "(\\+|-)?" +  // Optional sign.
+                                                     "([0-9a-z]+)" +        // One or more digits/letters.
+                                                     "(?:" +                // Optionally:
+                                                     "\\/" +                // - Fraction slash.
+                                                     "([0-9a-z]+)" +        // One or more digits/letters.
+                                                     ")?",
+                                                     options: .caseInsensitive)
 
 private extension String {
-    func parse() -> (sign: Substring?,
-                     numerator: Substring,
-                     denominator: Substring?)? {
+    func parseRational() -> (sign: Substring?,
+                             numerator: Substring,
+                             denominator: Substring?)? {
         // Make sure the entire string matches the pattern.
         let range = NSRange(startIndex..., in: self)
-        guard let match = regex.firstMatch(in: self, range: range),
+        guard let match = rationalRegex.firstMatch(in: self, range: range),
               match.range == range
         else { return nil }
         // Capture the sign, numerator, and denominator.

@@ -8,8 +8,7 @@ extension Rational: Numeric {
     }
     
     public mutating func negate() {
-        self = Rational(numerator: -numerator,
-                        denominator: denominator)
+        self = Rational(numerator: -numerator, denominator: denominator)
     }
 }
 
@@ -20,20 +19,15 @@ public extension Rational {
     /// Use this operator when you want to check
     /// for overflow; otherwise, use `*`.
     ///
-    /// - Throws: `OverflowError` on overflow.
+    /// - Throws: `ArithmeticError` on overflow.
     static func &* (lhs: Rational, rhs: Rational) throws -> Rational {
         var (n1, d1) = lhs.numeratorAndDenominator
         var (n2, d2) = rhs.numeratorAndDenominator
         reduceFraction(&n1, &d2)
         reduceFraction(&n2, &d1)
-        guard let numerator = multiplyNilOnOverflow(n1, n2),
-              let denominator = multiplyNilOnOverflow(d1, d2)
-        else {
-            throw OverflowError(operands: (lhs, rhs),
-                                operation: .multiplication)
-        }
-        return Rational(numerator: numerator,
-                        denominator: denominator)
+        let numerator = try multiplyThrowingOnOverflow(n1, n2)
+        let denominator = try multiplyThrowingOnOverflow(d1, d2)
+        return Rational(numerator: numerator, denominator: denominator)
     }
     
     /// Multiplies `lhs` by `rhs`,
@@ -42,7 +36,7 @@ public extension Rational {
     /// Use this operator when you want to check
     /// for overflow; otherwise, use `*=`.
     ///
-    /// - Throws: `OverflowError` on overflow.
+    /// - Throws: `ArithmeticError` on overflow.
     static func &*= (lhs: inout Rational, rhs: Rational) throws {
         try lhs = lhs &* rhs
     }

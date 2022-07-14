@@ -19,8 +19,7 @@ public struct Rational<IntegerType : SignedInteger & FixedWidthInteger>: Hashabl
     public let denominator: IntegerType
     
     /// Creates a rational value with the given properties.
-    internal init(numerator: IntegerType,
-                  denominator: IntegerType) {
+    internal init(numerator: IntegerType, denominator: IntegerType) {
         assert(denominator > 0 && gcd(numerator, denominator) == 1)
         self.numerator = numerator
         self.denominator = denominator
@@ -36,10 +35,8 @@ public extension Rational {
     ///   - denominator: The denominator of the fraction.
     ///
     /// - Precondition: `denominator != 0`
-    init(_ numerator: IntegerType,
-         _ denominator: IntegerType) {
-        precondition(denominator != 0,
-                     "Cannot create a rational value with denominator zero.")
+    init(_ numerator: IntegerType, _ denominator: IntegerType) {
+        precondition(denominator != 0, "Cannot create a rational value with denominator zero.")
         // gcd(IntegerType.min, IntegerType.min)
         // and gcd(0, IntegerType.min) overflow
         // so we handle these cases separately.
@@ -55,8 +52,7 @@ public extension Rational {
                 numerator.negate()
                 denominator.negate()
             }
-            self.init(numerator: numerator,
-                      denominator: denominator)
+            self.init(numerator: numerator, denominator: denominator)
         }
     }
     
@@ -65,8 +61,7 @@ public extension Rational {
     /// - Parameters:
     ///   - integral: The integral part.
     ///   - fractional: The fractional part.
-    init(integral: IntegerType,
-         fractional: Rational) {
+    init(integral: IntegerType, fractional: Rational) {
         //     r   q * d + r
         // q + - = ---------
         //     d       d
@@ -80,8 +75,7 @@ public extension Rational {
     ///
     /// - Parameter value: The value as an integer.
     init(_ value: IntegerType) {
-        self.init(numerator: value,
-                  denominator: 1)
+        self.init(numerator: value, denominator: 1)
     }
     
     /// Creates a rational value from an integer.
@@ -149,8 +143,7 @@ public extension Rational {
     ///     let x = Rational(1, 2)
     ///     let (n, d) = x.numeratorAndDenominator  // (1, 2)
     /// ```
-    var numeratorAndDenominator: (numerator: IntegerType,
-                                  denominator: IntegerType) {
+    var numeratorAndDenominator: (numerator: IntegerType, denominator: IntegerType) {
         (numerator, denominator)
     }
     
@@ -199,17 +192,17 @@ public extension Rational {
     ///
     /// The quotient `q` and remainder `r`of `n/d` satisfy
     /// the relation `(n == q * d + r) && |r| < d`.
-    var quotientAndRemainder: (quotient: IntegerType,
-                               remainder: IntegerType) {
+    var quotientAndRemainder: (quotient: IntegerType, remainder: IntegerType) {
         numerator.quotientAndRemainder(dividingBy: denominator)
     }
     
-    /// The integral and fractional parts.
-    var mixed: (integral: IntegerType,
-                fractional: Rational) {
+    /// The mixed number representation of this value.
+    ///
+    /// Use this property when you want to calculate the
+    /// integral and fractional parts at the same time.
+    var mixed: (integral: IntegerType, fractional: Rational) {
         let (quotient, remainder) = quotientAndRemainder
-        let fractional = Rational(numerator: remainder,
-                                  denominator: denominator)
+        let fractional = Rational(numerator: remainder, denominator: denominator)
         return (quotient, fractional)
     }
     
@@ -218,8 +211,7 @@ public extension Rational {
     /// If the numerator is `IntegerType.min`,
     /// the magnitude cannot be represented.
     var magnitude: Rational {
-        Rational(numerator: abs(numerator),
-                 denominator: denominator)
+        Rational(numerator: abs(numerator), denominator: denominator)
     }
     
     /// The multiplicative inverse, if it can be represented.
@@ -233,8 +225,7 @@ public extension Rational {
             numerator.negate()
             denominator.negate()
         }
-        return Rational(numerator: denominator,
-                        denominator: numerator)
+        return Rational(numerator: denominator, denominator: numerator)
     }
 }
 
@@ -255,7 +246,7 @@ public extension Rational {
     /// Default value is `.toNearestOrAwayFromZero`.
     func rounded(_ rule: FloatingPointRoundingRule = .toNearestOrAwayFromZero) -> IntegerType {
         // First check if this value is an integer.
-        if denominator == 1 { return numerator }
+        guard denominator != 1 else { return numerator }
         let (q, r) = quotientAndRemainder
         // If this value is negative:
         // --(q - 1)---(self)-----(q)----
@@ -309,14 +300,13 @@ public extension Rational {
     /// towards values with smaller denominators.
     ///
     /// - Parameters:
+    ///   - includingOne: A Boolean value to check if 1 is
+    ///   in the range of values. Default value is `false`.
     ///   - maxDenominator: The maximum denominator
     ///   to choose from. Default value is 100.
-    ///   - includingOne: A Boolean value to check if 1
-    ///   is in the range of values. Default value is `false`.
     ///
     /// - Requires: `maxDenominator > 0`
-    static func random(maxDenominator: IntegerType = 100,
-                       includingOne: Bool = false) -> Rational {
+    static func random(includingOne: Bool = false, maxDenominator: IntegerType = 100) -> Rational {
         // Choose two random integers n and d such that:
         // 1) 0 <= n < (or <=) d
         // 2) 1 <= d <= maxDenominator
@@ -325,40 +315,5 @@ public extension Rational {
             .random(in: 0...denominator) :
             .random(in: 0..<denominator)
         return Rational(numerator, denominator)
-    }
-    
-    // TODO: Comment on the distribution and the reason for the overflow check.
-    
-    /// Returns a random rational value from the given range.
-    ///
-    /// - Parameter range: The range of values to choose from.
-    ///
-    /// - Requires: `range` is not empty.
-    ///
-    /// - Throws: `OverflowError` on overflow.
-    static func random(in range: Range<Rational>) throws -> Rational {
-        // Choose a random value from x until y.
-        // Add to x a random percentage of the range width.
-        // x + percentage * (y - x)
-        // x + percentage * y - percentage * x
-        // (1 - percentage) * x + percentage * y
-        let percentage = Rational.random()
-        let oneMinusPercentage = Rational(integral: 1,
-                                          fractional: -percentage)
-        return try oneMinusPercentage &* range.lowerBound &+ percentage &* range.upperBound
-    }
-    
-    /// Returns a random rational value from the given range.
-    ///
-    /// - Parameter range: The range of values to choose from.
-    ///
-    /// - Throws: `OverflowError` on overflow.
-    static func random(in range: ClosedRange<Rational>) throws -> Rational {
-        // The same logic for the open range works here,
-        // but the random percentage includes 1.
-        let percentage = Rational.random(includingOne: true)
-        let oneMinusPercentage = Rational(integral: 1,
-                                          fractional: -percentage)
-        return try oneMinusPercentage &* range.lowerBound &+ percentage &* range.upperBound
     }
 }

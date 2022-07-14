@@ -19,12 +19,11 @@ extension Rational: Comparable {
         // The denominators are equal, so we compare the numerators.
         // - Note: This only works under the assumption that the
         // common denominator is non-negative.
-        guard let lhsNumerator = multiplyNilOnOverflow(n1, d2),
-              let rhsNumerator = multiplyNilOnOverflow(d1, n2)
-        else {
+        do {
+            return try multiplyThrowingOnOverflow(n1, d2) < multiplyThrowingOnOverflow(d1, n2)
+        } catch {
             // Resort to the slow path only when needed.
             return n1.multipliedFullWidth(by: d2) < d1.multipliedFullWidth(by: n2)
         }
-        return lhsNumerator < rhsNumerator
     }
 }

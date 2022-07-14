@@ -20,15 +20,13 @@ public extension Rational {
     /// Use this operator when you want to check
     /// for overflow; otherwise, use `/`.
     ///
-    /// - Throws: `OverflowError` on overflow.
+    /// - Throws: `ArithmeticError`
+    /// on division by zero or overflow.
     static func &/ (lhs: Rational, rhs: Rational) throws -> Rational {
-        guard let reciprocal = rhs.reciprocal,
-              let result = try? lhs &* reciprocal
-        else {
-            throw OverflowError(operands: (lhs, rhs),
-                                operation: .division)
+        guard let reciprocal = rhs.reciprocal else {
+            throw ArithmeticError.divisionByZero
         }
-        return result
+        return try lhs &* reciprocal
     }
     
     /// Divides `lhs` value by `rhs`,
@@ -37,7 +35,8 @@ public extension Rational {
     /// Use this function when you want to check
     /// for overflow; otherwise, use `/=`.
     ///
-    /// - Throws: `OverflowError` on overflow.
+    /// - Throws: `ArithmeticError`
+    /// on division by zero or overflow.
     static func &/= (lhs: inout Rational, rhs: Rational) throws {
         try lhs = lhs &/ rhs
     }
