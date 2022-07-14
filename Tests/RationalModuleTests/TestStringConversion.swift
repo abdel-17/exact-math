@@ -4,25 +4,26 @@ import XCTest
 class TestStringConversion: XCTestCase {
     func testExample() throws {
         // "9" out of bounds for radix 8.
-        XCTAssertNil(Rational<UInt>("900", radix: 8))
-        XCTAssertNotNil(Rational<UInt>("700", radix: 8))
+        XCTAssertNil(Rational<Int>("900", radix: 8))
+        XCTAssertEqual(Rational<Int>("700", radix: 8), Rational(7 << (3 * 2)))
         // Whitespace.
-        XCTAssertNil(Rational<UInt>(" 24", radix: 10))
-        XCTAssertNotNil(Rational<UInt>("24", radix: 10))
-        XCTAssertNil(Rational<UInt>("2 / 3", radix: 10))
-        XCTAssertNotNil(Rational<UInt>("2/3", radix: 10))
+        XCTAssertNil(Rational<Int>(" 24"))
+        XCTAssertEqual(Rational<Int>("24"), 24)
+        XCTAssertNil(Rational<Int>("2 / 3"))
+        XCTAssertEqual(Rational<Int>("2/3"), Rational(2, 3))
         // Negative sign in the wrong place.
-        XCTAssertNil(Rational<UInt>("5/-2", radix: 10))
-        XCTAssertNotNil(Rational<UInt>("-5/2", radix: 10))
+        XCTAssertNil(Rational<Int>("5/-2"))
+        XCTAssertEqual(Rational<Int>("-5/2"), Rational(-5, 2))
         // Division by zero.
-        XCTAssertNil(Rational<UInt>("1/0", radix: 10))
-        // 256 out of bounds for UInt8.
-        XCTAssertNil(Rational<UInt8>("256/2", radix: 10))
-        XCTAssertNotNil(Rational<UInt16>("256/2", radix: 10))
+        XCTAssertNil(Rational<Int>("1/0"))
+        // 128 out of bounds for Int8.
+        XCTAssertNil(Rational<Int8>("128/2"))
+        XCTAssertEqual(Rational<Int16>("128/2"), 64)
         // Match only one rational value.
-        XCTAssertNil(Rational<UInt>("+1/3-2/3"))
-        XCTAssertNotNil(Rational<UInt>("+1/3"))
-        XCTAssertNotNil(Rational<UInt>("-2/3"))
+        XCTAssertNil(Rational<Int>("+1/3-2/3"))
+        // Letters are acceptable for radix > 10.
+        XCTAssertEqual(Rational<Int>("-f0008", radix: 16), -Rational(8 + 15 << (4 * 4)))
+        XCTAssertEqual(Rational<Int>("A8/a8", radix: 16), 1)
     }
     
     func testPerformanceExample() throws {

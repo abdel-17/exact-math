@@ -9,7 +9,7 @@ extension Rational: LosslessStringConvertible {
     ///
     /// If the string is in an invalid format, or it describes
     /// a value that cannot be represented within this type,
-    /// `nil` is returned.
+    /// `nil` is returned. For example:
     ///
     /// ```
     ///     Rational<Int>(" 24")    // Whitespace.
@@ -34,15 +34,15 @@ extension Rational: LosslessStringConvertible {
     /// If the string is in an invalid format, the characters
     /// are out of bounds for the given radix, or it describes
     /// a value that cannot be represented within this type,
-    /// `nil` is returned.
+    /// `nil` is returned. For example:
     ///
     /// ```
-    ///     Rational<Int>("900", radix: 8)     // "9" out of bounds for radix 8.
-    ///     Rational<Int>(" 24", radix: 10)    // Whitespace.
-    ///     Rational<Int>("2 / 3", radix: 10)  // Whitespace.
-    ///     Rational<Int>("5/-2", radix: 10)   // Negative sign in the wrong place.
-    ///     Rational<Int>("1/0", radix: 10)    // Division by zero.
-    ///     Rational<Int8>("128/2", radix: 10) // 128 out of bounds for Int8.
+    ///     Rational<Int>("900", radix: 8)  // "9" out of bounds for radix 8.
+    ///     Rational<Int>(" 24")            // Whitespace.
+    ///     Rational<Int>("2 / 3")          // Whitespace.
+    ///     Rational<Int>("5/-2")           // Negative sign in the wrong place.
+    ///     Rational<Int>("1/0")            // Division by zero.
+    ///     Rational<Int8>("128/2")         // 128 out of bounds for Int8.
     /// ```
     ///
     /// - Parameters:
@@ -50,7 +50,7 @@ extension Rational: LosslessStringConvertible {
     ///   - radix: The radix (base) the value is described in.
     ///
     /// - Requires: `radix` in the range `2...36`.
-    public init?(_ description: String, radix: Int) {
+    public init?(_ description: String, radix: Int = 10) {
         guard let result = description.parse() else { return nil }
         guard var numerator = IntegerType(result.numerator, radix: radix) else { return nil }
         if result.sign == "-" { numerator.negate() }
@@ -58,16 +58,18 @@ extension Rational: LosslessStringConvertible {
             self.init(numerator)
             return
         }
-        guard let denominator = IntegerType(denominatorString, radix: radix) else { return nil }
+        guard let denominator = IntegerType(denominatorString, radix: radix),
+              denominator != 0
+        else { return nil }
         self.init(numerator, denominator)
     }
 }
 
-private let regex = try! NSRegularExpression(pattern: "(\\+|-)?" +          // Optional sign.
-                                             "([0-9]+|[a-z]+)" +            // One or more digits/letters.
-                                             "(?:" +                        // Optionally:
-                                             "\\/" +                        // - Fraction slash.
-                                             "([0-9]+|[a-z]+)" +            // - One or more digits/letters.
+private let regex = try! NSRegularExpression(pattern: "(\\+|-)?" +  // Optional sign.
+                                             "([0-9a-z]+)" +        // One or more digits/letters.
+                                             "(?:" +                // Optionally:
+                                             "\\/" +                // - Fraction slash.
+                                             "([0-9a-z]+)" +        // One or more digits/letters.
                                              ")?",
                                              options: .caseInsensitive)
 

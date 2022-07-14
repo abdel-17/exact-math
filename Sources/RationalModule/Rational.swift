@@ -44,7 +44,7 @@ public extension Rational {
         // and gcd(0, IntegerType.min) overflow
         // so we handle these cases separately.
         switch (numerator, denominator) {
-        case (IntegerType.min, IntegerType.min):
+        case (.min, .min):
             self = .one
         case (0, _):
             self = .zero
@@ -240,7 +240,7 @@ public extension Rational {
 
 // MARK: - Rounding
 public extension Rational {
-    /// Rounds this value to the nearest integer
+    /// Returns this value rounded to the nearest integer
     /// using the given rounding rule.
     ///
     /// The currently supported rounding rules are:
@@ -272,7 +272,7 @@ public extension Rational {
             // |d|    2
             //
             // Multiplication is safe from overflow errors.
-            // |r| < d <= IntegerType.max
+            // |r| < |d| <= IntegerType.max
             // 2 * |r| < 2 * IntegerType.max < IntegerType.Magnitude.max
             if 2 &* r.magnitude < denominator.magnitude {
                 return rounded(.towardZero)
@@ -311,8 +311,8 @@ public extension Rational {
     /// - Parameters:
     ///   - maxDenominator: The maximum denominator
     ///   to choose from. Default value is 100.
-    ///   - includingOne: A Boolean value to check if 1 is included
-    ///   in the range of values. Default value is `false`.
+    ///   - includingOne: A Boolean value to check if 1
+    ///   is in the range of values. Default value is `false`.
     ///
     /// - Requires: `maxDenominator > 0`
     static func random(maxDenominator: IntegerType = 100,
@@ -321,12 +321,9 @@ public extension Rational {
         // 1) 0 <= n < (or <=) d
         // 2) 1 <= d <= maxDenominator
         let denominator = IntegerType.random(in: 1...maxDenominator)
-        var numerator: IntegerType {
-            if includingOne {
-                return .random(in: 0...denominator)
-            }
-            return .random(in: 0..<denominator)
-        }
+        let numerator: IntegerType = includingOne ?
+            .random(in: 0...denominator) :
+            .random(in: 0..<denominator)
         return Rational(numerator, denominator)
     }
     
