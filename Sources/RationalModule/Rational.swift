@@ -38,7 +38,8 @@ public extension Rational {
     /// - Precondition: `denominator != 0`
     init(_ numerator: IntegerType,
          _ denominator: IntegerType) {
-        precondition(denominator != 0, "Cannot create a rational value with denominator zero.")
+        precondition(denominator != 0,
+                     "Cannot create a rational value with denominator zero.")
         // gcd(IntegerType.min, IntegerType.min)
         // and gcd(0, IntegerType.min) overflow
         // so we handle these cases separately.
@@ -197,10 +198,19 @@ public extension Rational {
     /// the numerator by the denominator.
     ///
     /// The quotient `q` and remainder `r`of `n/d` satisfy
-    /// the relation `(n == q * d + r) && abs(r) < d`.
+    /// the relation `(n == q * d + r) && |r| < d`.
     var quotientAndRemainder: (quotient: IntegerType,
                                remainder: IntegerType) {
         numerator.quotientAndRemainder(dividingBy: denominator)
+    }
+    
+    /// The integral and fractional parts.
+    var mixed: (integral: IntegerType,
+                fractional: Rational) {
+        let (quotient, remainder) = quotientAndRemainder
+        let fractional = Rational(numerator: remainder,
+                                  denominator: denominator)
+        return (quotient, fractional)
     }
     
     /// The magnitude of this value.
@@ -226,23 +236,132 @@ public extension Rational {
         return Rational(numerator: denominator,
                         denominator: numerator)
     }
-    
-    /// The integral and fractional parts.
-    var mixed: (integral: IntegerType,
-                fractional: Rational) {
-        let (quotient, remainder) = quotientAndRemainder
-        let fractional = Rational(numerator: remainder,
-                                  denominator: denominator)
-        return (quotient, fractional)
+}
+
+// MARK: - Rounding
+public extension Rational {
+    /// Rounds this value to the nearest integer
+    /// using the given rounding rule.
+    ///
+    /// The currently supported rounding rules are:
+    /// - `.toNearestOrAwayFromZero`
+    /// - `.toNearestOrEven`
+    /// - `.up`
+    /// - `.down`
+    /// - `.towardZero`
+    /// - `.awayFromZero`
+    ///
+    /// - Parameter rule: The rule used to round this value.
+    /// Default value is `.toNearestOrAwayFromZero`.
+    func rounded(_ rule: FloatingPointRoundingRule = .toNearestOrAwayFromZero) -> IntegerType {
+        // First check if this value is an integer.
+        if denominator == 1 { return numerator }
+        let (q, r) = quotientAndRemainder
+        // If this value is negative:
+        // --(q - 1)---(self)-----(q)----
+        //
+        // If it is positive:
+        // ----(q)-----(self)---(q + 1)--
+        switch rule {
+        case .toNearestOrAwayFromZero:
+            // If the magnitude of the fractional part is
+            // less than 1/2, we round towards zero.
+            //
+            // |r|    1
+            // --- < --- <=> 2 * |r| < |d|
+            // |d|    2
+            //
+            // Multiplication is safe from overflow errors.
+            // |r| < d <= IntegerType.max
+            // 2 * |r| < 2 * IntegerType.max < IntegerType.Magnitude.max
+            if 2 &* r.magnitude < denominator.magnitude {
+                return rounded(.towardZero)
+            }
+            // Otherwise, we round away from zero.
+            return rounded(.awayFromZero)
+        case .toNearestOrEven:
+            // If the magnitude of the fractional part is
+            // 1/2, we round towards the even of the two.
+            if r.magnitude == 1 && denominator == 2 {
+                return q.isMultiple(of: 2) ? q : rounded(.awayFromZero)
+            }
+            // Otherwise, we round towards the nearest.
+            return rounded(.toNearestOrAwayFromZero)
+        case .up:
+            return isNegative ? q : q + 1
+        case .down:
+            return isNegative ? q - 1 : q
+        case .towardZero:
+            return q
+        case .awayFromZero:
+            return isNegative ? q - 1 : q + 1
+        @unknown default:
+            fatalError("Unsupported rounding rule \(rule).")
+        }
     }
 }
 
-/*
 // MARK: - Random
 public extension Rational {
-    static func random(in range: Range<Rational>) -> Rational {
-        precondition(!range.isEmpty)
+    /// Returns a random rational value from 0 to 1.
+    ///
+    /// The distribution is not uniform. It is biased
+    /// towards values with smaller denominators.
+    ///
+    /// - Parameters:
+    ///   - maxDenominator: The maximum denominator
+    ///   to choose from. Default value is 100.
+    ///   - includingOne: A Boolean value to check if 1 is included
+    ///   in the range of values. Default value is `false`.
+    ///
+    /// - Requires: `maxDenominator > 0`
+    static func random(maxDenominator: IntegerType = 100,
+                       includingOne: Bool = false) -> Rational {
+        // Choose two random integers n and d such that:
+        // 1) 0 <= n < (or <=) d
+        // 2) 1 <= d <= maxDenominator
+        let denominator = IntegerType.random(in: 1...maxDenominator)
+        var numerator: IntegerType {
+            if includingOne {
+                return .random(in: 0...denominator)
+            }
+            return .random(in: 0..<denominator)
+        }
+        return Rational(numerator, denominator)
+    }
+    
+    // TODO: Comment on the distribution and the reason for the overflow check.
+    
+    /// Returns a random rational value from the given range.
+    ///
+    /// - Parameter range: The range of values to choose from.
+    ///
+    /// - Requires: `range` is not empty.
+    ///
+    /// - Throws: `OverflowError` on overflow.
+    static func random(in range: Range<Rational>) throws -> Rational {
+        // Choose a random value from x until y.
+        // Add to x a random percentage of the range width.
+        // x + percentage * (y - x)
+        // x + percentage * y - percentage * x
+        // (1 - percentage) * x + percentage * y
+        let percentage = Rational.random()
+        let oneMinusPercentage = Rational(integral: 1,
+                                          fractional: -percentage)
+        return try oneMinusPercentage &* range.lowerBound &+ percentage &* range.upperBound
+    }
+    
+    /// Returns a random rational value from the given range.
+    ///
+    /// - Parameter range: The range of values to choose from.
+    ///
+    /// - Throws: `OverflowError` on overflow.
+    static func random(in range: ClosedRange<Rational>) throws -> Rational {
+        // The same logic for the open range works here,
+        // but the random percentage includes 1.
+        let percentage = Rational.random(includingOne: true)
+        let oneMinusPercentage = Rational(integral: 1,
+                                          fractional: -percentage)
+        return try oneMinusPercentage &* range.lowerBound &+ percentage &* range.upperBound
     }
 }
-
-*/
