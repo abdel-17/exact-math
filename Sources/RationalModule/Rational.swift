@@ -2,7 +2,7 @@ import RealModule
 
 /// A value type representing a rational number.
 ///
-/// All `Rational `values are reduced to their simplest form,
+/// All `Rational` values are reduced to their simplest form,
 /// i.e. the numerator and denominator are coprime.
 public struct Rational<IntegerType : SignedInteger & FixedWidthInteger>: Hashable {
     /// The reduced numerator.
@@ -42,17 +42,16 @@ public extension Rational {
     /// - Precondition: `denominator != 0`
     init(_ numerator: IntegerType, _ denominator: IntegerType) {
         precondition(denominator != 0, "Cannot create a rational value with denominator zero.")
-        // gcd(IntegerType.min, IntegerType.min)
-        // and gcd(0, IntegerType.min) overflow
-        // so we handle these cases separately.
+        // gcd(IntegerType.min, IntegerType.min) and gcd(0, IntegerType.min)
+        // overflow (the magnitude of .min cannot be represented).
         switch (numerator, denominator) {
         case (.min, .min):
             self = .one
         case (0, _):
             self = .zero
         default:
-            var (numerator, denominator) = (numerator, denominator)
-            divide(&numerator, &denominator, by: gcd(numerator, denominator))
+            let g = gcd(numerator, denominator)
+            var (numerator, denominator) = (numerator / g, denominator / g)
             if denominator < 0 {
                 numerator.negate()
                 denominator.negate()
@@ -225,12 +224,10 @@ public extension Rational {
     /// or the numerator is `IntegerType.min`.
     var reciprocal: Rational? {
         guard !isZero && numerator != .min else { return nil }
-        var (numerator, denominator) = (numerator, denominator)
-        if numerator < 0 {
-            numerator.negate()
-            denominator.negate()
-        }
-        return Rational(numerator: denominator, denominator: numerator)
+        return isNegative ?
+        // Make sure `.denominator` is a positive value.
+        Rational(numerator: -denominator, denominator: -numerator) :
+        Rational(numerator: denominator, denominator: numerator)
     }
 }
 

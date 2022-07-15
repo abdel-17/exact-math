@@ -52,8 +52,7 @@ extension Rational: LosslessStringConvertible {
     /// - Requires: `radix` in the range `2...36`.
     public init?(_ description: String, radix: Int = 10) {
         guard let result = description.parseRational() else { return nil }
-        guard var numerator = IntegerType(result.numerator, radix: radix) else { return nil }
-        if result.sign == "-" { numerator.negate() }
+        guard let numerator = IntegerType(result.numerator, radix: radix) else { return nil }
         guard let denominatorString = result.denominator else {
             self.init(numerator)
             return
@@ -65,29 +64,30 @@ extension Rational: LosslessStringConvertible {
     }
 }
 
-private let rationalRegex = try! NSRegularExpression(pattern: "(\\+|-)?" +  // Optional sign.
-                                                     "([0-9a-z]+)" +        // One or more digits/letters.
-                                                     "(?:" +                // Optionally:
-                                                     "\\/" +                // - Fraction slash.
-                                                     "([0-9a-z]+)" +        // One or more digits/letters.
-                                                     ")?",
+private let rationalRegex = try! NSRegularExpression(pattern: "(" +     // Capture {
+                                                     "(?:\\+|-)?" +     //  Optionally { sign }
+                                                     "([0-9a-z]+)" +    //  One or more digits/letters
+                                                     ")" +              // }
+                                                     "(?:" +            // Optionally {
+                                                     "\\/" +            //  Fraction slash.
+                                                     "([0-9a-z]+)" +    //  Capture { One or more digits/letters }
+                                                     ")?",              // }
                                                      options: .caseInsensitive)
 
 private extension String {
-    func parseRational() -> (sign: Substring?,
-                             numerator: Substring,
+    subscript(bounds: NSRange) -> Substring? {
+        guard let range = Range(bounds, in: self) else { return nil }
+        return self[range]
+    }
+    
+    func parseRational() -> (numerator: Substring,
                              denominator: Substring?)? {
-        // Make sure the entire string matches the pattern.
+        // Match the entire string as a single pattern.
         let range = NSRange(startIndex..., in: self)
         guard let match = rationalRegex.firstMatch(in: self, range: range),
               match.range == range
         else { return nil }
-        // Capture the sign, numerator, and denominator.
-        let captures = (1...3).map { i -> Substring? in
-            // The sign and denominator are optional.
-            guard let bounds = Range(match.range(at: i), in: self) else { return nil }
-            return self[bounds]
-        }
-        return (captures[0], captures[1]!, captures[2])
+        return (numerator: self[match.range(at: 1)]!,
+                denominator: self[match.range(at: 2)])
     }
 }

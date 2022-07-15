@@ -1,5 +1,5 @@
 import XCTest
-@testable import RationalModule
+import RationalModule
 
 class TestStringConversion: XCTestCase {
     func testExample() throws {

@@ -45,10 +45,3 @@ internal func gcd<T : BinaryInteger>(_ a: T, _ b: T) -> T {
     // all the cases where x and y were both even.
     return T(y << min(xtz, ytz))
 }
-
-/// Divides the given integers by `divisor`.
-internal func divide<T : BinaryInteger>(_ a: inout T, _ b: inout T, by divisor: T) {
-    guard divisor != 1 else { return }
-    a /= divisor
-    b /= divisor
-}
