@@ -65,11 +65,11 @@ extension Rational: LosslessStringConvertible {
 }
 
 private let rationalRegex = try! NSRegularExpression(pattern: "(" +     // Capture {
-                                                     "(?:\\+|-)?" +     //  Optionally { sign }
-                                                     "([0-9a-z]+)" +    //  One or more digits/letters
+                                                     "(?:\\+|-)?" +     //  Optionally { + or - }
+                                                     "[0-9a-z]+" +      //  One or more digits/letters
                                                      ")" +              // }
                                                      "(?:" +            // Optionally {
-                                                     "\\/" +            //  Fraction slash.
+                                                     "\\/" +            //  Fraction slash
                                                      "([0-9a-z]+)" +    //  Capture { One or more digits/letters }
                                                      ")?",              // }
                                                      options: .caseInsensitive)
@@ -87,6 +87,8 @@ private extension String {
         guard let match = rationalRegex.firstMatch(in: self, range: range),
               match.range == range
         else { return nil }
+        // Make sure there are exactly two capture groups.
+        assert(match.numberOfRanges == 3)
         return (numerator: self[match.range(at: 1)]!,
                 denominator: self[match.range(at: 2)])
     }
