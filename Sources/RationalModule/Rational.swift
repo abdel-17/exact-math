@@ -1,6 +1,6 @@
 import RealModule
 
-/// A value type representing a rational number.
+/// A rational number represented by its numerator and denominator.
 ///
 /// All `Rational` values are reduced to their simplest form,
 /// i.e. the numerator and denominator are coprime.
@@ -151,6 +151,14 @@ public extension Rational {
         (numerator, denominator)
     }
     
+    /// True iff this value is a proper fraction.
+    ///
+    /// A fraction is proper iff its magnitude
+    /// is less than 1.
+    var isProper: Bool {
+        numerator.magnitude < denominator.magnitude
+    }
+    
     /// True iff this value is zero.
     ///
     /// A rational value is zero iff
@@ -169,8 +177,8 @@ public extension Rational {
     
     /// The sign of this value represented by an integer.
     ///
-    /// This property is `1` if this value is positive,
-    /// `-1` if it is negative, and `0` otherwise.
+    /// This property is 1 if this value is positive,
+    /// -1 if it is negative, and 0 otherwise.
     var signum: IntegerType {
         numerator.signum()
     }
@@ -223,6 +231,7 @@ public extension Rational {
     /// The reciprocal is `nil` if this value is zero
     /// or the numerator is `IntegerType.min`.
     var reciprocal: Rational? {
+        // `-IntegerType.min` overflows.
         guard !isZero && numerator != .min else { return nil }
         return isNegative ?
         // Make sure `.denominator` is a positive value.
@@ -231,70 +240,7 @@ public extension Rational {
     }
 }
 
-// MARK: - Rounding
-public extension Rational {
-    /// Returns this value rounded to the nearest integer
-    /// using the given rounding rule.
-    ///
-    /// The currently supported rounding rules are:
-    /// - `.toNearestOrAwayFromZero`
-    /// - `.toNearestOrEven`
-    /// - `.up`
-    /// - `.down`
-    /// - `.towardZero`
-    /// - `.awayFromZero`
-    ///
-    /// - Parameter rule: The rule used to round this value.
-    /// Default value is `.toNearestOrAwayFromZero`.
-    func rounded(_ rule: FloatingPointRoundingRule = .toNearestOrAwayFromZero) -> IntegerType {
-        // First check if this value is an integer.
-        guard denominator != 1 else { return numerator }
-        let (q, r) = quotientAndRemainder
-        // If this value is negative:
-        // --(q - 1)---(self)-----(q)----
-        //
-        // If it is positive:
-        // ----(q)-----(self)---(q + 1)--
-        switch rule {
-        case .toNearestOrAwayFromZero:
-            // If the magnitude of the fractional part is
-            // less than 1/2, we round towards zero.
-            //
-            // |r|    1
-            // --- < --- <=> 2 * |r| < |d|
-            // |d|    2
-            //
-            // Multiplication is safe from overflow errors.
-            // |r| < |d| <= IntegerType.max
-            // 2 * |r| < 2 * IntegerType.max < IntegerType.Magnitude.max
-            if 2 &* r.magnitude < denominator.magnitude {
-                return rounded(.towardZero)
-            }
-            // Otherwise, we round away from zero.
-            return rounded(.awayFromZero)
-        case .toNearestOrEven:
-            // If the magnitude of the fractional part is
-            // 1/2, we round towards the even of the two.
-            if r.magnitude == 1 && denominator == 2 {
-                return q.isMultiple(of: 2) ? q : rounded(.awayFromZero)
-            }
-            // Otherwise, we round towards the nearest.
-            return rounded(.toNearestOrAwayFromZero)
-        case .up:
-            return isNegative ? q : q + 1
-        case .down:
-            return isNegative ? q - 1 : q
-        case .towardZero:
-            return q
-        case .awayFromZero:
-            return isNegative ? q - 1 : q + 1
-        @unknown default:
-            fatalError("Unsupported rounding rule \(rule).")
-        }
-    }
-}
-
-// MARK: - Random
+// MARK: - Functions
 public extension Rational {
     /// Returns a random rational value from 0 to 1.
     ///
@@ -317,5 +263,85 @@ public extension Rational {
             .random(in: 0...denominator) :
             .random(in: 0..<denominator)
         return Rational(numerator, denominator)
+    }
+    
+    /// Returns a sequence of the digits after the radix point,
+    /// ignoring trailing zeros.
+    ///
+    /// The sequence is infinite in length if this value
+    /// is a repeating fraction in `radix`.
+    ///
+    /// - Parameter radix: The radix to find the digits in.
+    /// Default value is 10.
+    func fractionalDigits(radix: IntegerType = 10) -> UnfoldSequence<IntegerType, IntegerType> {
+        sequence(state: remainder) { remainder in
+            // Ignore trailing zeros.
+            guard remainder != 0 else { return nil }
+            // TODO: Can we handle overflow here?
+            remainder *= radix
+            let result = remainder.quotientAndRemainder(dividingBy: denominator)
+            remainder = result.remainder
+            return result.quotient
+        }
+    }
+    
+    /// Returns this value rounded to the nearest integer
+    /// using the given rounding rule.
+    ///
+    /// The currently supported rounding rules are:
+    /// - `.toNearestOrAwayFromZero`
+    /// - `.toNearestOrEven`
+    /// - `.up`
+    /// - `.down`
+    /// - `.towardZero`
+    /// - `.awayFromZero`
+    ///
+    /// - Parameter rule: The rule used to round this value.
+    /// Default value is `.toNearestOrAwayFromZero`.
+    func rounded(_ rule: FloatingPointRoundingRule = .toNearestOrAwayFromZero) -> IntegerType {
+        // First check if this value is an integer.
+        guard denominator != 1 else { return numerator }
+        let (quotient, remainder) = quotientAndRemainder
+        // If this value is negative:
+        // --(q - 1)---(self)-----(q)----
+        //
+        // If it is positive:
+        // ----(q)-----(self)---(q + 1)--
+        switch rule {
+        case .toNearestOrAwayFromZero:
+            // If the magnitude of the fractional part is
+            // less than 1/2, we round towards zero.
+            //
+            // |r|    1
+            // --- < --- <=> 2 * |r| < |d|
+            // |d|    2
+            //
+            // Multiplication is safe from overflow errors.
+            // |r| < |d| <= `IntegerType.max`
+            // 2 * |r| < 2 * `IntegerType.max` < `IntegerType.Magnitude.max`
+            if 2 * remainder.magnitude < denominator.magnitude {
+                return rounded(.towardZero)
+            }
+            // Otherwise, we round away from zero.
+            return rounded(.awayFromZero)
+        case .toNearestOrEven:
+            // If the magnitude of the fractional part is
+            // 1/2, we round towards the even of the two.
+            if remainder.magnitude == 1 && denominator == 2 {
+                return quotient.isMultiple(of: 2) ? quotient : rounded(.awayFromZero)
+            }
+            // Otherwise, we round towards the nearest.
+            return rounded(.toNearestOrAwayFromZero)
+        case .up:
+            return isNegative ? quotient : quotient + 1
+        case .down:
+            return isNegative ? quotient - 1 : quotient
+        case .towardZero:
+            return quotient
+        case .awayFromZero:
+            return isNegative ? quotient - 1 : quotient + 1
+        @unknown default:
+            fatalError("Unsupported rounding rule \(rule).")
+        }
     }
 }

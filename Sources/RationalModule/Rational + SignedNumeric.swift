@@ -9,7 +9,7 @@ extension Rational: Numeric {
         //
         // n1 * n2   (n1 / g1) * (n2 / g2)
         // ------- = ---------------------
-        // d1 * d2   (d2 / g1) * (d1 / g2)
+        // d1 * d2   (d1 / g2) * (d2 / g1)
         //
         // We reduce (n1, d2) and (n2, d1) instead of
         // (n1 * n2, d1 * d2) to avoid overflow.
@@ -38,21 +38,25 @@ extension Rational {
     }
     
     /// Returns this value multiplied by `other`,
-    /// or `nil` on overflow.
-    internal func multipliedOrNil(by other: Rational) -> Rational? {
+    /// or throws an error on overflow.
+    ///
+    /// - Throws: `ArithmeticError.overflow` on overflow.
+    internal func multipliedOrThrows(by other: Rational) throws -> Rational {
         // See * for more details.
         let (numerator, overflow1) = self.numerator.multipliedReportingOverflow(by: other.numerator)
         let (denominator, overflow2) = self.denominator.multipliedReportingOverflow(by: other.denominator)
-        guard !overflow1 && !overflow2 else { return nil }
+        guard !overflow1 && !overflow2 else { throw ArithmeticError.overflow }
         return Rational(numerator: numerator, denominator: denominator)
     }
     
     /// Returns the result of multiplying `lhs` by `rhs`,
-    /// or `nil` on overflow.
+    /// or throws an error on overflow.
     ///
     /// Use this operator when you want to check
     /// for overflow; otherwise, use `*`.
-    public static func &* (lhs: Rational, rhs: Rational) -> Rational? {
-        Rational(lhs.numerator, rhs.denominator).multipliedOrNil(by: Rational(rhs.numerator, lhs.denominator))
+    ///
+    /// - Throws: `ArithmeticError.overflow` on overflow.
+    public static func &* (lhs: Rational, rhs: Rational) throws -> Rational {
+        try Rational(lhs.numerator, rhs.denominator).multipliedOrThrows(by: Rational(rhs.numerator, lhs.denominator))
     }
 }

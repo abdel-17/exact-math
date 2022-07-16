@@ -28,7 +28,7 @@ extension Rational: LosslessStringConvertible {
     ///
     /// The string may begin with a + or - character,
     /// followed by one or more digits (0-9) and/or
-    /// letters (a-z A-Z), optionally followed by a
+    /// letters (a-z or A-Z), optionally followed by a
     /// / character and one or more digits/letters.
     ///
     /// If the string is in an invalid format, the characters
@@ -48,15 +48,18 @@ extension Rational: LosslessStringConvertible {
     /// - Parameters:
     ///   - description: The ASCII description of the value.
     ///   - radix: The radix (base) the value is described in.
-    ///
-    /// - Requires: `radix` in the range `2...36`.
+    ///   Default value is 10. Must be in the range `2...36`.
     public init?(_ description: String, radix: Int = 10) {
+        // Check if `description` matches the pattern.
         guard let result = description.parseRational() else { return nil }
+        // Guard against overflow and invalid characters for the radix.
         guard let numerator = IntegerType(result.numerator, radix: radix) else { return nil }
         guard let denominatorString = result.denominator else {
+            // Handle this case as an integer.
             self.init(numerator)
             return
         }
+        // Guard against overflow and invalid characters for the radix.
         guard let denominator = IntegerType(denominatorString, radix: radix),
               denominator != 0
         else { return nil }
@@ -64,27 +67,35 @@ extension Rational: LosslessStringConvertible {
     }
 }
 
-private let rationalRegex = try! NSRegularExpression(pattern: "(" +     // Capture {
-                                                     "(?:\\+|-)?" +     //  Optionally { + or - }
-                                                     "[0-9a-z]+" +      //  One or more digits/letters
-                                                     ")" +              // }
-                                                     "(?:" +            // Optionally {
-                                                     "\\/" +            //  Fraction slash
-                                                     "([0-9a-z]+)" +    //  Capture { One or more digits/letters }
-                                                     ")?",              // }
-                                                     options: .caseInsensitive)
+private extension NSRegularExpression {
+    /// A regular expression that matches the rational pattern
+    /// and captures its numerator and denominator.
+    static let rational = try! NSRegularExpression(pattern: "(" +     // Capture {
+                                                   "(?:\\+|-)?" +     //  Optionally { + or - }
+                                                   "[0-9a-z]+" +      //  One or more digits/letters
+                                                   ")" +              // }
+                                                   "(?:" +            // Optionally {
+                                                   "\\/" +            //  Fraction slash
+                                                   "([0-9a-z]+)" +    //  Capture { One or more digits/letters }
+                                                   ")?",              // }
+                                                   options: .caseInsensitive)
+}
 
 private extension String {
+    /// Returns a substring of this value at the given bounds,
+    /// or `nil` if the bounds are out of range.
     subscript(bounds: NSRange) -> Substring? {
         guard let range = Range(bounds, in: self) else { return nil }
         return self[range]
     }
     
+    /// Parses this value into a rational number,
+    /// or `nil` if it does not match the pattern.
     func parseRational() -> (numerator: Substring,
                              denominator: Substring?)? {
         // Match the entire string as a single pattern.
         let range = NSRange(startIndex..., in: self)
-        guard let match = rationalRegex.firstMatch(in: self, range: range),
+        guard let match = NSRegularExpression.rational.firstMatch(in: self, range: range),
               match.range == range
         else { return nil }
         // Make sure there are exactly two capture groups.
