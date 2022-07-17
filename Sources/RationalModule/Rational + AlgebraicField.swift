@@ -31,8 +31,8 @@ public extension Rational {
         guard !rhs.isZero else { throw ArithmeticError.divisionByZero }
         let (n1, d1) = lhs.numeratorAndDenominator
         let (n2, d2) = rhs.numeratorAndDenominator
-        // n1/n2 cannot be represented if n2 is `.min` and n1 is odd.
-        // See `Rational.init(_:_:)` for more details.
+        // n1/n2 overflows if n2 is `.min` and n1 is odd
+        // because `-.min` overflows.
         guard n2 != .min || n1.isMultiple(of: 2) else {
             throw ArithmeticError.overflow
         }

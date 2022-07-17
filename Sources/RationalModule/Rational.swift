@@ -19,6 +19,7 @@ public struct Rational<IntegerType : SignedInteger & FixedWidthInteger>: Hashabl
     public let denominator: IntegerType
     
     /// Creates a rational value from a reduced fraction.
+    @inlinable
     internal init(numerator: IntegerType, denominator: IntegerType) {
         precondition(denominator > 0)
         // This is an expensive check, so we use assert.
@@ -40,6 +41,7 @@ public extension Rational {
     ///   - denominator: The denominator of the fraction.
     ///
     /// - Precondition: `denominator != 0`
+    @inlinable
     init(_ numerator: IntegerType, _ denominator: IntegerType) {
         precondition(denominator != 0, "Cannot create a rational value with denominator zero.")
         // gcd(IntegerType.min, IntegerType.min) and gcd(0, IntegerType.min)
@@ -177,8 +179,8 @@ public extension Rational {
     
     /// The sign of this value represented by an integer.
     ///
-    /// This property is 1 if this value is positive,
-    /// -1 if it is negative, and 0 otherwise.
+    /// This property is `1` if this value is positive,
+    /// `-1` if it is negative, and `0` otherwise.
     var signum: IntegerType {
         numerator.signum()
     }
@@ -242,22 +244,27 @@ public extension Rational {
 
 // MARK: - Functions
 public extension Rational {
-    /// Returns a random rational value from 0 to 1.
+    /// Returns a random rational value between `0` (inclusive) and `1`,
+    /// and whose denominator is less than or equal to `maxDenominator`.
     ///
-    /// The distribution is not uniform. It is biased
-    /// towards values with smaller denominators.
+    /// The distribution is not uniform. Although all denominator values
+    /// in `1...maxDenominator` are equally likely, the distribution
+    /// is biased towards values with smaller denominators. For example,
+    /// `2/3` is more likely than `4/5` because the valid numerators
+    /// for denominator `3` are `0...2` (assuming `includingOne`
+    /// is false), but for denominator 5, the valid numerators are `0...4`.
     ///
     /// - Parameters:
-    ///   - includingOne: A Boolean value to check if 1 is
-    ///   in the range of values. Default value is `false`.
     ///   - maxDenominator: The maximum denominator
-    ///   to choose from. Default value is 100.
+    ///   to choose from. Default value is `100`.
+    ///   - includingOne: Pass `true` to include `1`
+    ///   in the range of values. Default value is `false`.
     ///
     /// - Requires: `maxDenominator > 0`
-    static func random(includingOne: Bool = false, maxDenominator: IntegerType = 100) -> Rational {
+    static func random(maxDenominator: IntegerType = 100, includingOne: Bool = false) -> Rational {
         // Choose two random integers n and d such that:
         // 1) 0 <= n < (or <=) d
-        // 2) 1 <= d <= maxDenominator
+        // 2) 1 <= d <= `maxDenominator`
         let denominator = IntegerType.random(in: 1...maxDenominator)
         let numerator: IntegerType = includingOne ?
             .random(in: 0...denominator) :
@@ -265,14 +272,14 @@ public extension Rational {
         return Rational(numerator, denominator)
     }
     
-    /// Returns a sequence of the digits after the radix point,
-    /// ignoring trailing zeros.
+    /// Returns a lazy sequence of the digits after
+    /// the radix point, ignoring trailing zeros.
     ///
-    /// The sequence is infinite in length if this value
-    /// is a repeating fraction in `radix`.
+    /// The returned sequence is infinite in length if
+    /// this value is a repeating fraction in `radix`.
     ///
-    /// - Parameter radix: The radix to find the digits in.
-    /// Default value is 10.
+    /// - Parameter radix: The radix to use for finding the digits.
+    /// Default value is `10`.
     func fractionalDigits(radix: IntegerType = 10) -> UnfoldSequence<IntegerType, IntegerType> {
         sequence(state: remainder) { remainder in
             // Ignore trailing zeros.

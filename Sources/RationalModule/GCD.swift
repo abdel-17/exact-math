@@ -1,4 +1,5 @@
 /// Returns the greatest common divisor of the given integers.
+@inlinable
 internal func gcd<T : BinaryInteger>(_ a: T, _ b: T) -> T {
     // Binary gcd algorithm:
     //
@@ -28,9 +29,9 @@ internal func gcd<T : BinaryInteger>(_ a: T, _ b: T) -> T {
     var x = a.magnitude
     var y = b.magnitude
     // Stopping condition.
-    if x == 0 { return T(y) }
+    guard x != 0 else { return T(y) }
     // gcd(x, 0) = gcd(0, x) = x
-    if y == 0 { return T(x) }
+    guard y != 0 else { return T(x) }
     let xtz = x.trailingZeroBitCount
     let ytz = y.trailingZeroBitCount
     y >>= ytz

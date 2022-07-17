@@ -37,7 +37,7 @@ extension Rational: LosslessStringConvertible {
     /// `nil` is returned. For example:
     ///
     /// ```
-    ///     Rational<Int>("900", radix: 8)  // "9" out of bounds for radix 8.
+    ///     Rational<Int>("800", radix: 8)  // "8" out of bounds for radix 8.
     ///     Rational<Int>(" 24")            // Whitespace.
     ///     Rational<Int>("2 / 3")          // Whitespace.
     ///     Rational<Int>("5/-2")           // Negative sign in the wrong place.
