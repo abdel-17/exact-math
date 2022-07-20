@@ -41,7 +41,8 @@ internal func gcd<T : BinaryInteger>(_ a: T, _ b: T) -> T {
         if x < y { swap(&x, &y) }
         x -= y
         // x is now even, but y remains odd.
-    } while x != 0
+    }
+    while x != 0
     // y is left shifted by min(xtz, ytz) to account for
     // all the cases where x and y were both even.
     return T(y << min(xtz, ytz))

@@ -1,6 +1,7 @@
 import RealModule
 
-/// A rational number represented by its numerator and denominator.
+/// An immutable rational number represented by
+/// its numerator and denominator.
 ///
 /// All `Rational` values are reduced to their simplest form,
 /// i.e. the numerator and denominator are coprime.
@@ -53,20 +54,24 @@ public extension Rational {
             self = .zero
         default:
             let g = gcd(numerator, denominator)
-            var (numerator, denominator) = (numerator / g, denominator / g)
+            let (numerator, denominator) = (numerator / g, denominator / g)
             if denominator < 0 {
-                numerator.negate()
-                denominator.negate()
+                self.init(numerator: -numerator, denominator: -denominator)
+            } else {
+                self.init(numerator: numerator, denominator: denominator)
             }
-            self.init(numerator: numerator, denominator: denominator)
         }
     }
     
     /// Creates a rational value from a mixed number.
     ///
+    /// Use this initializer to create a rational value from
+    /// its mixed value representation.
+    ///
     /// - Parameters:
     ///   - integral: The integral part.
     ///   - fractional: The fractional part.
+    @inlinable
     init(integral: IntegerType, fractional: Rational) {
         //     r   q * d + r
         // q + - = ---------
@@ -76,43 +81,14 @@ public extension Rational {
         self.init(numerator: integral * fractional.denominator + fractional.numerator,
                   denominator: fractional.denominator)
     }
-    
-    /// Creates a rational value from an integer.
-    ///
-    /// - Parameter value: The value as an integer.
-    init(_ value: IntegerType) {
-        self.init(numerator: value, denominator: 1)
-    }
-    
-    /// Creates a rational value from an integer.
-    ///
-    /// Use this initializer if `source` can be
-    /// represented exactly in `IntegerType`,
-    /// or else a runtime error will occur.
-    ///
-    /// Use `init?(exactly:)` to return `nil`
-    /// instead of a runtime error.
-    init<T : BinaryInteger>(_ source: T) {
-        self.init(IntegerType(source))
-    }
-    
-    /// Creates a rational value from an integer, returning
-    /// `nil` if it cannot be represented exactly.
-    ///
-    /// Use this initializer if `source` may not be
-    /// representible exactly in `IntegerType`;
-    /// otherwise, use `init(_:)`.
-    init?<T : BinaryInteger>(exactly source: T) {
-        guard let value = IntegerType(exactly: source) else { return nil }
-        self.init(value)
-    }
 }
 
-// MARK: - Properties
+// MARK: - Extra Properties
 public extension Rational {
     /// The minimum representible rational value.
     ///
     /// Equivalent to `Rational(IntegerType.min)`.
+    @inlinable
     static var min: Rational {
         Rational(IntegerType.min)
     }
@@ -120,6 +96,7 @@ public extension Rational {
     /// The maximum representible rational value.
     ///
     /// Equivalent to `Rational(IntegerType.max)`.
+    @inlinable
     static var max: Rational {
         Rational(IntegerType.max)
     }
@@ -128,6 +105,7 @@ public extension Rational {
     /// and denominator 1.
     ///
     /// Equivalent to `Rational(0 as IntegerType)`.
+    @inlinable
     static var zero: Rational {
         Rational(0 as IntegerType)
     }
@@ -136,20 +114,22 @@ public extension Rational {
     /// denominator both 1.
     ///
     /// Equivalent to `Rational(1 as IntegerType)`.
+    @inlinable
     static var one: Rational {
         Rational(1 as IntegerType)
     }
     
     /// A tuple of the numerator and denominator.
     ///
-    /// Use this value when you want to destructure
+    /// Use this property when you want to destructure
     /// a rational value to its components
     ///
     /// ```
     ///     let x = Rational(1, 2)
-    ///     let (n, d) = x.numeratorAndDenominator  // (1, 2)
+    ///     let (n, d) = x.asRatio  // (1, 2)
     /// ```
-    var numeratorAndDenominator: (numerator: IntegerType, denominator: IntegerType) {
+    @inlinable
+    var asRatio: (numerator: IntegerType, denominator: IntegerType) {
         (numerator, denominator)
     }
     
@@ -157,6 +137,7 @@ public extension Rational {
     ///
     /// A fraction is proper iff its magnitude
     /// is less than 1.
+    @inlinable
     var isProper: Bool {
         numerator.magnitude < denominator.magnitude
     }
@@ -165,6 +146,7 @@ public extension Rational {
     ///
     /// A rational value is zero iff
     /// its numerator is zero.
+    @inlinable
     var isZero: Bool {
         numerator == 0
     }
@@ -173,6 +155,7 @@ public extension Rational {
     ///
     /// A rational value is negative iff
     /// its numerator is negative.
+    @inlinable
     var isNegative: Bool {
         numerator < 0
     }
@@ -181,6 +164,7 @@ public extension Rational {
     ///
     /// This property is `1` if this value is positive,
     /// `-1` if it is negative, and `0` otherwise.
+    @inlinable
     var signum: IntegerType {
         numerator.signum()
     }
@@ -189,6 +173,7 @@ public extension Rational {
     /// by the denominator.
     ///
     /// Equivalent to the integral part.
+    @inlinable
     var quotient: IntegerType {
         numerator / denominator
     }
@@ -197,6 +182,7 @@ public extension Rational {
     /// by the denominator.
     ///
     /// Equivalent to the numerator of the fractional part.
+    @inlinable
     var remainder: IntegerType {
         numerator % denominator
     }
@@ -204,8 +190,9 @@ public extension Rational {
     /// The quotient and remainder of dividing
     /// the numerator by the denominator.
     ///
-    /// The quotient `q` and remainder `r`of `n/d` satisfy
+    /// The quotient `q` and remainder `r` of `n/d` satisfy
     /// the relation `(n == q * d + r) && |r| < d`.
+    @inlinable
     var quotientAndRemainder: (quotient: IntegerType, remainder: IntegerType) {
         numerator.quotientAndRemainder(dividingBy: denominator)
     }
@@ -214,6 +201,7 @@ public extension Rational {
     ///
     /// Use this property when you want to calculate the
     /// integral and fractional parts at the same time.
+    @inlinable
     var mixed: (integral: IntegerType, fractional: Rational) {
         let (quotient, remainder) = quotientAndRemainder
         let fractional = Rational(numerator: remainder, denominator: denominator)
@@ -224,6 +212,7 @@ public extension Rational {
     ///
     /// If the numerator is `IntegerType.min`,
     /// the magnitude cannot be represented.
+    @inlinable
     var magnitude: Rational {
         Rational(numerator: abs(numerator), denominator: denominator)
     }
@@ -232,6 +221,7 @@ public extension Rational {
     ///
     /// The reciprocal is `nil` if this value is zero
     /// or the numerator is `IntegerType.min`.
+    @inlinable
     var reciprocal: Rational? {
         // `-IntegerType.min` overflows.
         guard !isZero && numerator != .min else { return nil }
@@ -242,7 +232,7 @@ public extension Rational {
     }
 }
 
-// MARK: - Functions
+// MARK: - Extra Functions
 public extension Rational {
     /// Returns a random rational value between `0` (inclusive) and `1`,
     /// and whose denominator is less than or equal to `maxDenominator`.
@@ -256,12 +246,13 @@ public extension Rational {
     ///
     /// - Parameters:
     ///   - maxDenominator: The maximum denominator
-    ///   to choose from. Default value is `100`.
+    ///   to choose from. Default value is `127`.
     ///   - includingOne: Pass `true` to include `1`
     ///   in the range of values. Default value is `false`.
     ///
     /// - Requires: `maxDenominator > 0`
-    static func random(maxDenominator: IntegerType = 100, includingOne: Bool = false) -> Rational {
+    @inlinable
+    static func random(maxDenominator: IntegerType = 127, includingOne: Bool = false) -> Rational {
         // Choose two random integers n and d such that:
         // 1) 0 <= n < (or <=) d
         // 2) 1 <= d <= `maxDenominator`
@@ -278,8 +269,9 @@ public extension Rational {
     /// The returned sequence is infinite in length if
     /// this value is a repeating fraction in `radix`.
     ///
-    /// - Parameter radix: The radix to use for finding the digits.
-    /// Default value is `10`.
+    /// - Parameter radix: The radix to use for
+    /// finding the digits. Default value is `10`.
+    @inlinable
     func fractionalDigits(radix: IntegerType = 10) -> UnfoldSequence<IntegerType, IntegerType> {
         sequence(state: remainder) { remainder in
             // Ignore trailing zeros.
@@ -305,6 +297,7 @@ public extension Rational {
     ///
     /// - Parameter rule: The rule used to round this value.
     /// Default value is `.toNearestOrAwayFromZero`.
+    @inlinable
     func rounded(_ rule: FloatingPointRoundingRule = .toNearestOrAwayFromZero) -> IntegerType {
         // First check if this value is an integer.
         guard denominator != 1 else { return numerator }
