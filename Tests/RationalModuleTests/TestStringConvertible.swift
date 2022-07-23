@@ -2,7 +2,7 @@ import XCTest
 import RationalModule
 
 class TestStringConversion: XCTestCase {
-    func testDecimal() throws {
+    func testDecimal() {
         let value = Rational<Int>(10, 3)
         XCTAssertEqual(String(reflecting: value), "Rational<Int>(10, 3)")
         // Radix defaults to 10.
@@ -10,13 +10,13 @@ class TestStringConversion: XCTestCase {
         XCTAssertEqual(value, Rational("10/3"))
     }
     
-    func testBinary() throws {
+    func testBinary() {
         let value = Rational<Int>(0b1000101)
         XCTAssertEqual(String(value, radix: 2), "1000101")
         XCTAssertEqual(value, Rational("1000101", radix: 2))
     }
     
-    func testHexadecimal() throws {
+    func testHexadecimal() {
         let value = Rational<Int>(0x1a4)
         // Uppercase defaults to `false`.
         let lowercase = String(value, radix: 16)
@@ -28,10 +28,10 @@ class TestStringConversion: XCTestCase {
         XCTAssertEqual(value, Rational(uppercase, radix: 16))
     }
     
-    func testInvalidPatterns() throws {
+    func testInvalidPatterns() {
         // "8" out of bounds for radix 8.
         XCTAssertNil(Rational<Int>("800", radix: 8))
-        XCTAssertEqual(Rational<Int>("700", radix: 8), Rational(7 << (3 * 2)))
+        XCTAssertEqual(Rational<Int>("700", radix: 8), Rational(0o700))
         // Whitespace.
         XCTAssertNil(Rational<Int>("2 / 3"))
         XCTAssertEqual(Rational<Int>("2/3"), Rational(2, 3))

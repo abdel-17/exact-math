@@ -33,7 +33,7 @@ public extension Rational {
             let (n1, d1) = lhs.asRatio
             let (n2, d2) = rhs.asRatio
             // n2 is `.min`, which is a power of two. If n1 is odd,
-            // they share no common factors and n1/n2 overflows.
+            // they share no common factors and n1 / n2 overflows.
             guard n1.isMultiple(of: 2) else { throw ArithmeticError.overflow }
             // See `&*` for more details.
             return try Rational(n1, n2).multiplied(by: Rational(d2, d1))

@@ -234,32 +234,38 @@ public extension Rational {
 
 // MARK: - Extra Functions
 public extension Rational {
-    /// Returns a random rational value between `0` (inclusive) and `1`,
-    /// and whose denominator is less than or equal to `maxDenominator`.
+    /// Returns a random rational value between `0` and `1`
+    /// whose denominator is less than or equal to `maxDenominator`.
     ///
     /// The distribution is not uniform. Although all denominator values
     /// in `1...maxDenominator` are equally likely, the distribution
     /// is biased towards values with smaller denominators. For example,
     /// `2/3` is more likely than `4/5` because the valid numerators
-    /// for denominator `3` are `0...2` (assuming `includingOne`
-    /// is false), but for denominator 5, the valid numerators are `0...4`.
+    /// for denominator `3` are `0...2` (assuming the default values),
+    /// but for denominator 5, the valid numerators are `0...4`.
     ///
     /// - Parameters:
-    ///   - maxDenominator: The maximum denominator
-    ///   to choose from. Default value is `127`.
+    ///   - maxDenominator: The maximum denominator to
+    ///   choose from. Default value is `127` if `IntegerType`
+    ///   is `Int8` and `1000` otherwise.
+    ///   - includingZero: Pass `true` to include `0`
+    ///   in the range of values. Default value is `true`.
     ///   - includingOne: Pass `true` to include `1`
     ///   in the range of values. Default value is `false`.
     ///
     /// - Requires: `maxDenominator > 0`
     @inlinable
-    static func random(maxDenominator: IntegerType = 127, includingOne: Bool = false) -> Rational {
+    static func random(maxDenominator: IntegerType = (IntegerType.self == Int8.self) ? 127 : 1000,
+                       includingZero: Bool = true,
+                       includingOne: Bool = false) -> Rational {
         // Choose two random integers n and d such that:
-        // 1) 0 <= n < (or <=) d
+        // 1) 0 <(?=) n <(?=) d
         // 2) 1 <= d <= `maxDenominator`
         let denominator = IntegerType.random(in: 1...maxDenominator)
+        let minNumerator: IntegerType = includingZero ? 0 : 1
         let numerator: IntegerType = includingOne ?
-            .random(in: 0...denominator) :
-            .random(in: 0..<denominator)
+            .random(in: minNumerator...denominator) :
+            .random(in: minNumerator..<denominator)
         return Rational(numerator, denominator)
     }
     
@@ -302,6 +308,7 @@ public extension Rational {
         // First check if this value is an integer.
         guard denominator != 1 else { return numerator }
         let (quotient, remainder) = quotientAndRemainder
+        assert(remainder != 0)
         // If this value is negative:
         // --(q - 1)---(self)-----(q)----
         //

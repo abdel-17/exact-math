@@ -1,4 +1,5 @@
 extension Rational: Comparable {
+    @inlinable
     public static func < (lhs: Rational, rhs: Rational) -> Bool {
         let (n1, d1) = lhs.asRatio
         let (n2, d2) = rhs.asRatio

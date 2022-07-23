@@ -1,12 +1,14 @@
 import Foundation
 
 extension Rational: CustomStringConvertible {
+    @inlinable
     public var description: String {
         denominator == 1 ? "\(numerator)" : "\(numerator)/\(denominator)"
     }
 }
 
 extension Rational: CustomDebugStringConvertible {
+    @inlinable
     public var debugDescription: String {
         "Rational<\(IntegerType.self)>(\(numerator), \(denominator))"
     }
@@ -23,6 +25,7 @@ extension String {
     ///   Default value is `10`.
     ///   - uppercase: Pass `true` to use uppercase letters.
     ///   Default value is `false`. Must be in the range `2...36`.
+    @inlinable
     public init<T>(_ value: Rational<T>, radix: Int = 10, uppercase: Bool = false) {
         let numerator = String(value.numerator, radix: radix, uppercase: uppercase)
         guard value.denominator != 1 else {
@@ -39,7 +42,8 @@ extension Rational: LosslessStringConvertible {
     ///
     /// Equivalent to `Rational(description, radix: 10)`.
     ///
-    /// - Parameter description: The ASCII decimal description of the value.
+    /// - Parameter description: The ASCII description of the value.
+    @inlinable
     public init?(_ description: String) {
         self.init(description, radix: 10)
     }
@@ -70,6 +74,7 @@ extension Rational: LosslessStringConvertible {
     ///   - description: The ASCII description of the value.
     ///   - radix: The radix (base) the value is described in.
     ///   Default value is 10. Must be in the range `2...36`.
+    @inlinable
     public init?(_ description: String, radix: Int = 10) {
         // Check if `description` matches the pattern.
         guard let result = description.parseRational() else { return nil }
@@ -88,23 +93,25 @@ extension Rational: LosslessStringConvertible {
     }
 }
 
-private extension NSRegularExpression {
+internal extension NSRegularExpression {
     /// A regular expression that matches the rational pattern
     /// and captures its numerator and denominator.
-    static let rational = try! NSRegularExpression(pattern: "(" +     // Capture {
-                                                   "(?:\\+|-)?" +     //  Optional sign
-                                                   "[0-9a-z]+" +      //  One or more digit or letter
-                                                   ")" +              // }
-                                                   "(?:" +            // Optional {
-                                                   "\\/" +            //  Fraction slash
-                                                   "([0-9a-z]+)" +    //  Capture { One or more digit or letter }
-                                                   ")?",              // }
+    @usableFromInline
+    static let rational = try! NSRegularExpression(pattern: "(" +
+                                                   "(?:\\+|-)?" +     // Optional sign
+                                                   "[0-9a-z]+" +      // One or more digit or letter
+                                                   ")" +              //
+                                                   "(?:" +            // Optional:
+                                                   "\\/" +            // - Fraction slash
+                                                   "([0-9a-z]+)" +    // - One or more digit or letter
+                                                   ")?",
                                                    options: .caseInsensitive)
 }
 
-private extension String {
+internal extension String {
     /// Returns a substring of this value at the given bounds,
     /// or `nil` if the bounds are out of range.
+    @inlinable
     subscript(bounds: NSRange) -> Substring? {
         guard let range = Range(bounds, in: self) else { return nil }
         return self[range]
@@ -112,6 +119,7 @@ private extension String {
     
     /// Parses this value into a rational number,
     /// or `nil` if it does not match the pattern.
+    @inlinable
     func parseRational() -> (numerator: Substring,
                              denominator: Substring?)? {
         // Match the entire string as a single pattern.
