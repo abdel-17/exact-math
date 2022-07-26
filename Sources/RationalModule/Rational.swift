@@ -3,8 +3,13 @@ import RealModule
 /// An immutable rational number represented by
 /// its numerator and denominator.
 ///
-/// All `Rational` values are reduced to their simplest form,
-/// i.e. the numerator and denominator are coprime.
+/// All `Rational` values have a single canonical representation:
+/// 1) The numerator and denominator are coprime.
+/// 2) The denominator is positive.
+///
+/// For example:
+/// - `4/6` is reduced to `2/3`.
+/// - `1/-2` is simplified to `-1/2`.
 public struct Rational<IntegerType : SignedInteger & FixedWidthInteger>: Hashable {
     /// The reduced numerator.
     ///
@@ -22,9 +27,7 @@ public struct Rational<IntegerType : SignedInteger & FixedWidthInteger>: Hashabl
     /// Creates a rational value from a reduced fraction.
     @inlinable
     internal init(numerator: IntegerType, denominator: IntegerType) {
-        precondition(denominator > 0)
-        // This is an expensive check, so we use assert.
-        assert(gcd(numerator, denominator) == 1)
+        assert(denominator > 0 && gcd(numerator, denominator) == 1)
         self.numerator = numerator
         self.denominator = denominator
     }
@@ -226,7 +229,7 @@ public extension Rational {
         // `-IntegerType.min` overflows.
         guard !isZero && numerator != .min else { return nil }
         return isNegative ?
-        // Make sure `.denominator` is a positive value.
+        // Make sure `self.denominator` is positive.
         Rational(numerator: -denominator, denominator: -numerator) :
         Rational(numerator: denominator, denominator: numerator)
     }
@@ -277,14 +280,19 @@ public extension Rational {
     ///
     /// - Parameter radix: The radix to use for
     /// finding the digits. Default value is `10`.
+    ///
+    /// - Precondition: `radix >= 2`
     @inlinable
     func fractionalDigits(radix: IntegerType = 10) -> UnfoldSequence<IntegerType, IntegerType> {
-        sequence(state: remainder) { remainder in
+        precondition(radix >= 2)
+        // We use |remainder| because digits are non-negative
+        // regardless of the sign. |remainder| < denominator,
+        // so it's safe from overflow errors.
+        return sequence(state: abs(remainder)) { remainder in
             // Ignore trailing zeros.
             guard remainder != 0 else { return nil }
             // TODO: Can we handle overflow here?
-            remainder *= radix
-            let result = remainder.quotientAndRemainder(dividingBy: denominator)
+            let result = (remainder * radix).quotientAndRemainder(dividingBy: denominator)
             remainder = result.remainder
             return result.quotient
         }
@@ -348,7 +356,7 @@ public extension Rational {
         case .awayFromZero:
             return isNegative ? quotient - 1 : quotient + 1
         @unknown default:
-            fatalError("Unsupported rounding rule \(rule).")
+            fatalError("Unsupported rounding rule: \(rule).")
         }
     }
 }

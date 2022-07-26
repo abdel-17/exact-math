@@ -37,6 +37,35 @@ extension String {
     }
 }
 
+// MARK: - Regex
+// Constructing an NSRegularExpression instance is expensive,
+// so we store a reference to access directly.
+internal extension NSRegularExpression {
+    /// A regular expression that matches the rational pattern
+    /// and captures its numerator and denominator.
+    @usableFromInline
+    static let rational = try! NSRegularExpression(pattern: "(" +
+                                                   "(?:\\+|-)?" +     // Optional sign
+                                                   "[0-9a-z]+" +      // One or more digit or letter
+                                                   ")" +              //
+                                                   "(?:" +            // Optional:
+                                                   "\\/" +            // - Fraction slash
+                                                   "([0-9a-z]+)" +    // - One or more digit or letter
+                                                   ")?",
+                                                   options: .caseInsensitive)
+}
+
+internal extension String {
+    /// Returns a substring of this value at the given bounds,
+    /// or `nil` if the bounds are out of range.
+    @inlinable
+    subscript(bounds: NSRange) -> Substring? {
+        guard let range = Range(bounds, in: self) else { return nil }
+        return self[range]
+    }
+}
+
+// MARK: - Conformance to LosslessStringConvertible
 extension Rational: LosslessStringConvertible {
     /// Creates a rational value from its string representation.
     ///
@@ -76,60 +105,24 @@ extension Rational: LosslessStringConvertible {
     ///   Default value is 10. Must be in the range `2...36`.
     @inlinable
     public init?(_ description: String, radix: Int = 10) {
-        // Check if `description` matches the pattern.
-        guard let result = description.parseRational() else { return nil }
-        // Guard against overflow and invalid characters for the radix.
-        guard let numerator = IntegerType(result.numerator, radix: radix) else { return nil }
-        guard let denominatorString = result.denominator else {
-            // Handle this case as an integer.
-            self.init(numerator)
-            return
-        }
-        // Guard against overflow and invalid characters for the radix.
-        guard let denominator = IntegerType(denominatorString, radix: radix),
-              denominator != 0
-        else { return nil }
-        self.init(numerator, denominator)
-    }
-}
-
-internal extension NSRegularExpression {
-    /// A regular expression that matches the rational pattern
-    /// and captures its numerator and denominator.
-    @usableFromInline
-    static let rational = try! NSRegularExpression(pattern: "(" +
-                                                   "(?:\\+|-)?" +     // Optional sign
-                                                   "[0-9a-z]+" +      // One or more digit or letter
-                                                   ")" +              //
-                                                   "(?:" +            // Optional:
-                                                   "\\/" +            // - Fraction slash
-                                                   "([0-9a-z]+)" +    // - One or more digit or letter
-                                                   ")?",
-                                                   options: .caseInsensitive)
-}
-
-internal extension String {
-    /// Returns a substring of this value at the given bounds,
-    /// or `nil` if the bounds are out of range.
-    @inlinable
-    subscript(bounds: NSRange) -> Substring? {
-        guard let range = Range(bounds, in: self) else { return nil }
-        return self[range]
-    }
-    
-    /// Parses this value into a rational number,
-    /// or `nil` if it does not match the pattern.
-    @inlinable
-    func parseRational() -> (numerator: Substring,
-                             denominator: Substring?)? {
         // Match the entire string as a single pattern.
-        let range = NSRange(startIndex..., in: self)
-        guard let match = NSRegularExpression.rational.firstMatch(in: self, range: range),
+        let range = NSRange(description.startIndex..., in: description)
+        guard let match = NSRegularExpression.rational.firstMatch(in: description, range: range),
               match.range == range
         else { return nil }
         // Make sure there are exactly two capture groups.
         assert(match.numberOfRanges == 3)
-        return (numerator: self[match.range(at: 1)]!,
-                denominator: self[match.range(at: 2)])
+        // The numerator is non-optional, so it's safe to force unwrap.
+        let numeratorString = description[match.range(at: 1)]!
+        // Guard against overflow and out-of-bounds characters.
+        guard let numerator = IntegerType(numeratorString, radix: radix) else { return nil }
+        // The denominator is optional.
+        guard let denominatorString = description[match.range(at: 2)] else {
+            // Handle the missing denominator case as an integer.
+            self.init(numerator)
+            return
+        }
+        guard let denominator = IntegerType(denominatorString, radix: radix) else { return nil }
+        self.init(numerator, denominator)
     }
 }

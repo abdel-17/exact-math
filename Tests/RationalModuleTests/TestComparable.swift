@@ -7,12 +7,12 @@ class TestComparable: XCTestCase {
             type.init(.random(in: -max...max), .random(in: 1...max))
         }
         // Validate using the naive expression.
-        let inIncreasingOrder = x.numerator * y.denominator < x.denominator * y.numerator
-        XCTAssertEqual(x < y, inIncreasingOrder)
+        XCTAssertEqual(x < y, x.numerator * y.denominator < x.denominator * y.numerator)
     }
     
     func testRandomPair() {
-        // Limit the values to sqrt(.max) to avoid overflow.
+        // Limit the values to `floor(sqrt(IntegerType.max))`
+        // to avoid overflow.
         testRandomPair(type: Rational<Int64>.self, max: 3_037_000_499)
         testRandomPair(type: Rational<Int32>.self, max: 46_340)
         testRandomPair(type: Rational<Int16>.self, max: 181)
@@ -20,8 +20,8 @@ class TestComparable: XCTestCase {
     }
     
     private func testNearOverflowBoundary<T>(type: Rational<T>.Type) {
-        XCTAssertTrue(type.max / 2 < type.max)
-        XCTAssertTrue(type.min < type.min / 2)
+        XCTAssertTrue(type.init(.max, 3) < type.max)
+        XCTAssertTrue(type.min < type.init(.min, 3))
     }
     
     func testNearOverflowBoundary() {
