@@ -49,6 +49,18 @@ extension Rational {
         return try Rational(n1, d2).multiplied(by: Rational(n2, d1))
     }
     
+    /// Multiplies `lhs` by `rhs`,
+    /// throwing an error on overflow.
+    ///
+    /// Use this operator when you want to check
+    /// for overflow; otherwise, use `*=`.
+    ///
+    /// - Throws: `ArithmeticError.overflow` on overflow.
+    @inlinable
+    public static func &*= (lhs: inout Rational, rhs: Rational) throws {
+        lhs = try lhs &* rhs
+    }
+    
     /// Returns this value multiplied by `other`,
     /// throwing an error on overflow.
     ///

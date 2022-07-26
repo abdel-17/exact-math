@@ -10,6 +10,11 @@ import RealModule
 /// For example:
 /// - `4/6` is reduced to `2/3`.
 /// - `1/-2` is simplified to `-1/2`.
+///
+/// The arithmetic operators (`+`, `-`, `*`, `/`) trap on overflow.
+/// Overflow-checked operators (`&+`, `&-`, `&*`, `&/`) and their
+/// assignment counterparts (`&+=`, `&-=`, `&*=`, `&/=`) throw
+/// `ArithmeticError` on overflow, instead.
 public struct Rational<IntegerType : SignedInteger & FixedWidthInteger>: Hashable {
     /// The reduced numerator.
     ///

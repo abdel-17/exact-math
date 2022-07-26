@@ -13,6 +13,7 @@ extension Rational: AlgebraicField {
 }
 
 infix operator &/: MultiplicationPrecedence
+infix operator &/=: AssignmentPrecedence
 
 public extension Rational {
     /// Returns the result of dividing `lhs` by `rhs`,
@@ -39,5 +40,17 @@ public extension Rational {
             return try Rational(n1, n2).multiplied(by: Rational(d2, d1))
         }
         return try lhs &* reciprocal
+    }
+    
+    /// Divides `lhs` by `rhs`,
+    /// throwing an error on overflow.
+    ///
+    /// Use this operator when you want to check
+    /// for overflow; otherwise, use `/=`.
+    ///
+    /// - Throws: `ArithmeticError.overflow` on overflow.
+    @inlinable
+    static func &/= (lhs: inout Rational, rhs: Rational) throws {
+        lhs = try lhs &/ rhs
     }
 }

@@ -19,7 +19,7 @@ extension Rational: AdditiveArithmetic {
     }
 }
 
-extension Rational {
+public extension Rational {
     /// Returns the result of adding `rhs` to `lhs`,
     /// throwing an error on overflow.
     ///
@@ -28,7 +28,7 @@ extension Rational {
     ///
     /// - Throws: `ArithmeticError.overflow` on overflow.
     @inlinable
-    public static func &+ (lhs: Rational, rhs: Rational) throws -> Rational {
+    static func &+ (lhs: Rational, rhs: Rational) throws -> Rational {
         try lhs.formingCommonDenominator(with: rhs) {
             $0.addingReportingOverflow($1)
         }
@@ -42,22 +42,48 @@ extension Rational {
     ///
     /// - Throws: `ArithmeticError.overflow` on overflow.
     @inlinable
-    public static func &- (lhs: Rational, rhs: Rational) throws -> Rational {
+    static func &- (lhs: Rational, rhs: Rational) throws -> Rational {
         // We don't simply do `lhs &+ -rhs` because `-rhs` could overflow.
         try lhs.formingCommonDenominator(with: rhs) {
             $0.subtractingReportingOverflow($1)
         }
     }
     
+    /// Adds `rhs` to `lhs`,
+    /// throwing an error on overflow.
+    ///
+    /// Use this operator when you want to check
+    /// for overflow; otherwise, use `+=`.
+    ///
+    /// - Throws: `ArithmeticError.overflow` on overflow.
+    @inlinable
+    static func &+= (lhs: inout Rational, rhs: Rational) throws {
+        lhs = try lhs &+ rhs
+    }
+    
+    /// Subtracts `rhs` from `lhs`,
+    /// throwing an error on overflow.
+    ///
+    /// Use this operator when you want to check
+    /// for overflow; otherwise, use `-=`.
+    ///
+    /// - Throws: `ArithmeticError.overflow` on overflow.
+    @inlinable
+    static func &-= (lhs: inout Rational, rhs: Rational) throws {
+        lhs = try lhs &- rhs
+    }
+}
+
+internal extension Rational {
     /// Returns the result of forming a common denominator
     /// with `other` and combining the numerators using
     /// the given closure, throwing an error on overflow.
     ///
     /// - Throws: `ArithmeticError.overflow` on overflow.
     @inlinable
-    internal func formingCommonDenominator(with other: Rational,
-                                           operation: (IntegerType, IntegerType) -> (partialValue: IntegerType,
-                                                                                     overflow: Bool)) throws -> Rational {
+    func formingCommonDenominator(with other: Rational,
+                                  operation: (IntegerType, IntegerType) -> (partialValue: IntegerType,
+                                                                            overflow: Bool)) throws -> Rational {
         let (n1, d1) = self.asRatio
         let (n2, d2) = other.asRatio
         let g1 = gcd(d1, d2)
