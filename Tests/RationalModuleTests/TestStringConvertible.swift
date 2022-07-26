@@ -5,7 +5,7 @@ class TestStringConversion: XCTestCase {
     func testExamples() {
         let x = Rational<Int>(10, 3)
         XCTAssertEqual(String(reflecting: x), "Rational<Int>(10, 3)")
-        // Radix defaults to 10.
+        // `radix:` defaults to 10.
         XCTAssertEqual(String(x), "10/3")
         XCTAssertEqual(x, Rational("10/3"))
         
@@ -14,14 +14,12 @@ class TestStringConversion: XCTestCase {
         XCTAssertEqual(y, Rational("1000101", radix: 2))
         
         let z = Rational<Int>(0x1a4)
-        // Uppercase defaults to `false`.
-        let lowercase = String(z, radix: 16)
-        XCTAssertEqual(lowercase, "1a4")
-        XCTAssertEqual(z, Rational(lowercase, radix: 16))
+        // `uppercase:` defaults to `false`.
+        XCTAssertEqual(String(z, radix: 16), "1a4")
+        XCTAssertEqual(String(z, radix: 16, uppercase: true), "1A4")
         // Parsing is case insensitive
-        let uppercase = String(z, radix: 16, uppercase: true)
-        XCTAssertEqual(uppercase, "1A4")
-        XCTAssertEqual(z, Rational(uppercase, radix: 16))
+        XCTAssertEqual(z, Rational("1a4", radix: 16))
+        XCTAssertEqual(z, Rational("1A4", radix: 16))
     }
     
     func testInvalidPatterns() {

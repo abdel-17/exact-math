@@ -317,11 +317,6 @@ public extension Rational {
         guard denominator != 1 else { return numerator }
         let (quotient, remainder) = quotientAndRemainder
         assert(remainder != 0)
-        // If this value is negative:
-        // --(q - 1)---(self)-----(q)----
-        //
-        // If it is positive:
-        // ----(q)-----(self)---(q + 1)--
         switch rule {
         case .toNearestOrAwayFromZero:
             // If the magnitude of the fractional part is
@@ -347,6 +342,11 @@ public extension Rational {
             }
             // Otherwise, we round towards the nearest.
             return rounded(.toNearestOrAwayFromZero)
+        // If this value is negative:
+        // ---(q - 1)---(self)---(q)---0---
+        //
+        // If it is positive:
+        // ---0---(q)---(self)---(q + 1)---
         case .up:
             return isNegative ? quotient : quotient + 1
         case .down:
