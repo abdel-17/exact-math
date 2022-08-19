@@ -1,14 +1,12 @@
 import Foundation
 
 extension Rational: CustomStringConvertible {
-    @inlinable
     public var description: String {
         String(self, radix: 10)
     }
 }
 
 extension Rational: CustomDebugStringConvertible {
-    @inlinable
     public var debugDescription: String {
         "Rational<\(IntegerType.self)>(\(numerator), \(denominator))"
     }
@@ -17,7 +15,7 @@ extension Rational: CustomDebugStringConvertible {
 public extension String {
     /// Creates a string describing the given rational value.
     ///
-    /// Numerals greater than 10 are represented as Roman letters.
+    /// Numerals greater than 9 are represented as Roman letters.
     ///
     /// - Parameters:
     ///   - value: The value to convert to a string.
@@ -49,7 +47,7 @@ internal extension NSRegularExpression {
                                                    "(?:\\+|-)?" +     // Optional sign
                                                    "[0-9a-z]+" +      // One or more digit or letter
                                                    ")" +              //
-                                                   "(?:" +            // Optional:
+                                                   "(?:" +            // Optionally:
                                                    "\\/" +            // - Fraction slash
                                                    "([0-9a-z]+)" +    // - One or more digit or letter
                                                    ")?",
