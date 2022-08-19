@@ -3,7 +3,7 @@ import Foundation
 extension Rational: CustomStringConvertible {
     @inlinable
     public var description: String {
-        denominator == 1 ? "\(numerator)" : "\(numerator)/\(denominator)"
+        String(self, radix: 10)
     }
 }
 
@@ -22,9 +22,9 @@ public extension String {
     /// - Parameters:
     ///   - value: The value to convert to a string.
     ///   - radix: The radix (base) to describe the value in.
-    ///   Default value is `10`.
+    ///   Default value is `10`. Must be in the range `2...36`.
     ///   - uppercase: Pass `true` to use uppercase letters.
-    ///   Default value is `false`. Must be in the range `2...36`.
+    ///   Default value is `false`.
     @inlinable
     init<T>(_ value: Rational<T>, radix: Int = 10, uppercase: Bool = false) {
         let numerator = String(value.numerator, radix: radix, uppercase: uppercase)
